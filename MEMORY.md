@@ -120,6 +120,9 @@ supabase/migrations/
 | 8 | `npm run lint` + `npm run build` — 0 errors, 0 warnings | ✅ |
 | 9 | Pushed to public GitHub repo | ✅ |
 | 10 | Schema consolidation (2026-07-04): offerings/sessions/enrollments/packages; migration 005+006+007 applied to Supabase (phcxyitwmeqblveeemyg); CRM refactored to single Offerings module; build clean | ✅ |
+| 11 | Audit & hardening (2026-07-04, commit f006ca9): 008 sessions unique constraint; attendance includes trial/registered; AddSessionForm for workshops; requireUser() on /api/crm/*; error/loading/404 pages; robots+sitemap+OG; next/image; ESLint CLI flat config; .env.example | ✅ |
+
+**Pending (needs owner):** real YouTube channel URL + testimonials + booking availability in `lib/data.ts` (placeholders kept intentionally); enable leaked-password protection in Supabase Auth dashboard; npm audit shows 2 moderate (Next's bundled postcss — wait for Next patch); majors deferred on purpose (Next 16, zod 4, TS 6 — zod v3 + resolvers v3 required by react-hook-form typing).
 
 ---
 
