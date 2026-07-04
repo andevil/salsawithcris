@@ -6,6 +6,7 @@ import { PageHeader, Badge, Card, Button, Table, Th, Td, EmptyState } from '@/co
 import { statusBadge } from '@/components/crm/ui'
 import { PencilSimple, ArrowLeft, Plus, ArrowSquareOut } from '@phosphor-icons/react/dist/ssr'
 import { SessionActions } from '@/components/crm/SessionActions'
+import { AddSessionForm } from '@/components/crm/AddSessionForm'
 import { DeleteButton } from '@/components/crm/DeleteButton'
 import { PendingRegistrationActions } from '@/components/crm/PendingRegistrationActions'
 import { fmtTime } from '@/lib/utils'
@@ -194,12 +195,15 @@ export default async function OfferingDetailPage({ params }: { params: Promise<{
       <Card>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-lg font-light text-[#171410]">Class sessions</h3>
-          {isCourse && <SessionActions offeringId={id} />}
+          <div className="flex gap-2">
+            <AddSessionForm offeringId={id} />
+            {offering.recurrence === 'weekly' && offering.day_of_week && <SessionActions offeringId={id} />}
+          </div>
         </div>
         {sessions?.length ? (
           <Table>
             <thead>
-              <tr><Th>Date</Th><Th>Time</Th><Th>Status</Th><Th>Attendance</Th></tr>
+              <tr><Th>Date</Th><Th>Time</Th><Th>Status</Th><Th>Attendance</Th><Th /></tr>
             </thead>
             <tbody>
               {sessions.map(s => (
@@ -212,12 +216,15 @@ export default async function OfferingDetailPage({ params }: { params: Promise<{
                       Take attendance →
                     </Link>
                   </Td>
+                  <Td>
+                    <DeleteButton table="sessions" id={s.id} redirectTo={`/crm/offerings/${id}`} label="Delete" />
+                  </Td>
                 </tr>
               ))}
             </tbody>
           </Table>
         ) : (
-          <EmptyState message="No sessions yet. Generate sessions from the schedule." />
+          <EmptyState message="No sessions yet. Generate sessions from the schedule or add one manually." />
         )}
       </Card>
     </div>

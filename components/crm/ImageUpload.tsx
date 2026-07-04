@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Image, UploadSimple, X } from '@phosphor-icons/react'
+import { Image as ImageIcon, UploadSimple, X } from '@phosphor-icons/react'
 
 interface Props {
   value: string | null
@@ -52,7 +52,7 @@ export function ImageUpload({ value, onChange, folder = 'uploads' }: Props) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={value}
-            alt="Thumbnail preview"
+            alt="Event thumbnail preview"
             className="h-48 w-full object-cover"
           />
           <button
@@ -77,7 +77,7 @@ export function ImageUpload({ value, onChange, folder = 'uploads' }: Props) {
             </>
           ) : (
             <>
-              <Image size={24} weight="light" className="text-[#C9A84C]" />
+              <ImageIcon size={24} weight="light" className="text-[#C9A84C]" />
               <span>Click to upload thumbnail</span>
               <span className="text-xs">JPEG, PNG or WebP · max 5 MB</span>
             </>

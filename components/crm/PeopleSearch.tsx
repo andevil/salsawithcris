@@ -13,7 +13,7 @@ export function PeopleSearch({ statusOptions, roleOptions, defaultQ, defaultStat
   defaultRole: string
 }) {
   const router = useRouter()
-  const [, startTransition] = useTransition()
+  const [isPending, startTransition] = useTransition()
 
   const update = (key: string, value: string) => {
     const params = new URLSearchParams(window.location.search)
@@ -28,9 +28,15 @@ export function PeopleSearch({ statusOptions, roleOptions, defaultQ, defaultStat
         <Input
           defaultValue={defaultQ}
           placeholder="Search by name…"
-          className="pl-9"
+          className={`pl-9 pr-9 transition-opacity duration-150 ${isPending ? 'opacity-60' : ''}`}
           onChange={e => update('q', e.target.value)}
         />
+        {isPending && (
+          <span
+            aria-hidden
+            className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin rounded-full border-2 border-[#C9A84C]/30 border-t-[#C9A84C]"
+          />
+        )}
       </div>
       <Select
         defaultValue={defaultStatus}

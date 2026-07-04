@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import { createClient } from '@/lib/supabase/server'
+import { fmtDate, fmtTime } from '@/lib/utils'
 import { PageHeader, Badge, Card, Button, Table, Th, Td, EmptyState } from '@/components/crm/ui'
 import { statusBadge } from '@/components/crm/ui'
 import { PencilSimple, ArrowLeft, Plus } from '@phosphor-icons/react/dist/ssr'
@@ -148,7 +149,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             <tbody>
               {payments.map(p => (
                 <tr key={p.id}>
-                  <Td>{format(parseISO(p.payment_date), 'd MMM yyyy')}</Td>
+                  <Td>{fmtDate(p.payment_date)}</Td>
                   <Td><span className="text-xs">{p.payment_type}</span></Td>
                   <Td><span className="text-xs">{p.payment_method}</span></Td>
                   <Td className="font-medium">{p.amount.toLocaleString()} {p.currency}</Td>
@@ -158,6 +159,29 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             </tbody>
           </Table>
         ) : <EmptyState message="No payments recorded." />}
+      </Card>
+
+      {/* Private lessons */}
+      <Card className="mb-6">
+        <h3 className="mb-4 font-display text-lg font-light text-[#171410]">Private Lessons</h3>
+        {privateLessons?.length ? (
+          <Table>
+            <thead><tr>
+              <Th>Date</Th><Th>Time</Th><Th>Focus Area</Th><Th>Status</Th><Th>Payment</Th>
+            </tr></thead>
+            <tbody>
+              {privateLessons.map(pl => (
+                <tr key={pl.id}>
+                  <Td>{fmtDate(pl.date)}</Td>
+                  <Td>{pl.start_time ? fmtTime(pl.start_time) : '—'}</Td>
+                  <Td><span className="text-xs">{pl.focus_area ?? '—'}</span></Td>
+                  <Td><Badge variant={statusBadge(pl.status)}>{pl.status}</Badge></Td>
+                  <Td><Badge variant={statusBadge(pl.payment_status)}>{pl.payment_status}</Badge></Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        ) : <EmptyState message="No private lessons booked yet." />}
       </Card>
 
       {/* Communication log */}

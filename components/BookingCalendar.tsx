@@ -23,7 +23,11 @@ type DayCell = {
   isBooked: boolean;
 };
 
-const TODAY_ISO = "2026-06-21"; // Demo "today" — aligns with mock availability.
+// Availability in lib/data.ts is mock data pending a real booking backend —
+// once that's wired up, derive TODAY from the server/client clock is fine
+// since real availability will always be generated relative to "now".
+const now = new Date();
+const TODAY_ISO = toIso(now.getFullYear(), now.getMonth(), now.getDate());
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -32,6 +36,20 @@ const MONTH_NAMES = [
 
 function toIso(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+// The mock availability slots are pinned to June/July 2026. If "today" has
+// moved past all of them (no real backend yet), fall back to the month of
+// the earliest mock slot so the calendar doesn't open on an empty view.
+function initialViewDate(): { year: number; month: number } {
+  const mockIsoDates = Object.keys(availability.slots).sort();
+  const latestMock = mockIsoDates[mockIsoDates.length - 1];
+  if (latestMock && latestMock < TODAY_ISO) {
+    const earliest = mockIsoDates[0];
+    const [y, m] = earliest.split("-").map(Number);
+    return { year: y, month: m - 1 };
+  }
+  return { year: now.getFullYear(), month: now.getMonth() };
 }
 
 function buildMonth(year: number, month: number): (DayCell | null)[] {
@@ -62,9 +80,10 @@ export function BookingCalendar() {
   const reduce = useReducedMotion();
   const [step, setStep] = useState<Step>("calendar");
 
-  // Calendar state
-  const [viewYear, setViewYear] = useState(2026);
-  const [viewMonth, setViewMonth] = useState(5); // June (0-indexed)
+  // Calendar state — starts on the current month, unless the mock
+  // availability data has entirely lapsed (see initialViewDate above).
+  const [viewYear, setViewYear] = useState(() => initialViewDate().year);
+  const [viewMonth, setViewMonth] = useState(() => initialViewDate().month);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 

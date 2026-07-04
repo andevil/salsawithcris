@@ -41,7 +41,7 @@ export default async function AttendancePage({
         .from('enrollments')
         .select('people(id, full_name, dance_role, dance_experience)')
         .eq('offering_id', selectedSession?.offering_id ?? '')
-        .eq('enrollment_status', 'active'),
+        .in('enrollment_status', ['active', 'trial', 'registered']),
       supabase
         .from('attendance')
         .select('person_id, status')

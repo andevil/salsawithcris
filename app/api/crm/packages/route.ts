@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/supabase/apiAuth'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
+  const unauthorized = await requireUser(supabase)
+  if (unauthorized) return unauthorized
+
   const body = await request.json()
 
   const { bonus_items, ...packageData } = body
@@ -25,8 +29,11 @@ export async function POST(request: Request) {
     }))
     const { error: bonusError } = await supabase.from('package_bonuses').insert(bonuses)
     if (bonusError) {
-      // Don't fail the whole request — package is created
       console.error('Failed to insert bonuses:', bonusError.message)
+      return NextResponse.json({
+        error: `Package was created, but bonuses failed to save: ${bonusError.message}`,
+        package: pkg,
+      }, { status: 500 })
     }
   }
 

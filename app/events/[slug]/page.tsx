@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { format, parseISO } from 'date-fns'
 import { MapPin, Clock, Users, CurrencyCircleDollar, InstagramLogo } from '@phosphor-icons/react/dist/ssr'
@@ -102,9 +103,11 @@ export default async function EventPage({ params }: { params: Promise<Params> })
       : fmtTime(event.start_time)
     : null
 
-  const priceStr = kind === 'workshop'
-    ? (event.default_price === 0 ? 'Free' : `${event.default_price.toLocaleString()} HUF`)
-    : `${event.default_price.toLocaleString()} HUF / class`
+  const priceStr = event.default_price == null
+    ? null
+    : kind === 'workshop'
+      ? (event.default_price === 0 ? 'Free' : `${event.default_price.toLocaleString()} HUF`)
+      : `${event.default_price.toLocaleString()} HUF / class`
 
   const capacity = event.capacity
   const availableSpots = capacity != null ? Math.max(0, capacity - enrolled) : null
@@ -115,12 +118,16 @@ export default async function EventPage({ params }: { params: Promise<Params> })
 
         {/* Hero thumbnail */}
         {event.thumbnail_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={event.thumbnail_url}
-            alt={event.name}
-            className="mb-8 block w-full"
-          />
+          <div className="relative mb-8 aspect-[16/9] w-full">
+            <Image
+              src={event.thumbnail_url}
+              alt={event.name}
+              fill
+              sizes="(min-width: 672px) 672px, 100vw"
+              className="object-cover"
+              priority
+            />
+          </div>
         )}
 
         {/* Title */}

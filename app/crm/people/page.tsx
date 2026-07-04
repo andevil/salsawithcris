@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic'
 
 const STATUS_OPTIONS  = ['', 'lead', 'waitlist', 'active', 'inactive', 'alumni', 'private-only', 'workshop-only']
 const ROLE_OPTIONS    = ['', 'leader', 'follower', 'both', 'solo', 'unknown']
+const PEOPLE_LIMIT    = 200
 
 export default async function PeoplePage({
   searchParams,
@@ -31,7 +32,7 @@ export default async function PeoplePage({
   if (role)   query = query.eq('dance_role', role)
   if (q)      query = query.ilike('full_name', `%${q}%`)
 
-  const { data: people } = await query.limit(200)
+  const { data: people } = await query.limit(PEOPLE_LIMIT)
 
   return (
     <div>
@@ -119,6 +120,11 @@ export default async function PeoplePage({
           />
         )}
       </div>
+      {people?.length === PEOPLE_LIMIT && (
+        <p className="mt-2 text-xs text-[#9A907F]">
+          Showing first {PEOPLE_LIMIT} — refine filters to narrow results.
+        </p>
+      )}
     </div>
   )
 }

@@ -137,11 +137,10 @@ left join promotions pr on pr.name = pk.promo_name;
 -- link package_id back onto a couple of enrollments
 update enrollments e
 set package_id = pk.id
-from people p, offerings o, packages pk2, packages pk
+from people p, offerings o, packages pk
 where e.person_id = p.id
   and e.offering_id = o.id
   and pk.person_id = p.id
-  and pk2.id = pk.id
   and (
     (p.email = 'anna.kovacs@email.com' and o.name = 'A1 Partnerwork' and pk.name = 'Standard Monthly Pass')
     or (p.email = 'mateo.rivas@email.com' and o.name = 'A1 Partnerwork' and pk.name = 'Returning Student First Month')

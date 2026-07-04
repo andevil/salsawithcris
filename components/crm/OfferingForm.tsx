@@ -18,10 +18,10 @@ const DOW_MAP: Record<string, 0 | 1 | 2 | 3 | 4 | 5 | 6> = {
 }
 
 async function syncSessions(supabase: ReturnType<typeof createClient>, offeringId: string, values: {
-  day_of_week?: string; start_date?: string; end_date?: string
+  recurrence?: string; day_of_week?: string; start_date?: string; end_date?: string
   start_time?: string; end_time?: string; location?: string
 }) {
-  if (!values.day_of_week || !values.end_date) return
+  if (values.recurrence !== 'weekly' || !values.day_of_week || !values.end_date) return
   const endDate = parseISO(values.end_date)
   if (isBefore(endDate, new Date())) return   // end date is in the past — skip
 
@@ -97,6 +97,7 @@ export function OfferingForm({ offering, offeringType }: { offering?: Offering; 
   const [slugTouched, setSlugTouched] = useState(!!offering?.slug)
   const [multiDay, setMultiDay] = useState(!!offering?.end_date)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [recurrenceTouched, setRecurrenceTouched] = useState(!!offering)
 
   const { register, handleSubmit, control, setValue, formState: { errors, isSubmitting } } = useForm<F>({
     resolver: zodResolver(schema),
@@ -111,7 +112,7 @@ export function OfferingForm({ offering, offeringType }: { offering?: Offering; 
       day_of_week:        offering?.day_of_week        ?? '',
       start_time:         offering?.start_time         ?? '',
       end_time:           offering?.end_time           ?? '',
-      recurrence:         offering?.recurrence         ?? 'weekly',
+      recurrence:         offering?.recurrence         ?? (offeringType === 'workshop' ? 'one-off' : 'weekly'),
       workshop_type:      offering?.workshop_type       ?? '',
       capacity:           offering?.capacity           ?? undefined,
       status:             offering?.status             ?? 'active',
@@ -133,6 +134,13 @@ export function OfferingForm({ offering, offeringType }: { offering?: Offering; 
       setValue('slug', toSlug(nameValue))
     }
   }, [nameValue, slugTouched, setValue])
+
+  useEffect(() => {
+    // Only auto-set recurrence for new offerings, and only until the user picks one manually
+    if (!offering && !recurrenceTouched) {
+      setValue('recurrence', typeValue === 'workshop' ? 'one-off' : 'weekly')
+    }
+  }, [typeValue, offering, recurrenceTouched, setValue])
 
   const onSubmit = async (values: F) => {
     setSubmitError(null)
@@ -156,8 +164,8 @@ export function OfferingForm({ offering, offeringType }: { offering?: Offering; 
     if (offering) {
       const { error } = await supabase.from('offerings').update(payload).eq('id', offering.id)
       if (error) { setSubmitError(error.message); return }
-      // Sync sessions whenever end_date is updated and still in the future
-      if (isCourse) await syncSessions(supabase, offering.id, values)
+      // Sync sessions whenever end_date is updated and still in the future (weekly recurrence only)
+      await syncSessions(supabase, offering.id, values)
       router.push(`/crm/offerings/${offering.id}`)
     } else {
       const { data, error } = await supabase.from('offerings').insert(payload).select().single()
@@ -217,7 +225,7 @@ export function OfferingForm({ offering, offeringType }: { offering?: Offering; 
           </Field>
 
           <Field label="Recurrence" htmlFor="recurrence">
-            <Select id="recurrence" {...register('recurrence')}>
+            <Select id="recurrence" {...register('recurrence', { onChange: () => setRecurrenceTouched(true) })}>
               {['weekly','one-off','multi-session'].map(r => (
                 <option key={r} value={r}>{r}</option>
               ))}

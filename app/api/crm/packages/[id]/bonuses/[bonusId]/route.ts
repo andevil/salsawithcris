@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/supabase/apiAuth'
 import { format } from 'date-fns'
 
 export async function PATCH(
@@ -8,6 +9,9 @@ export async function PATCH(
 ) {
   const { bonusId } = await params
   const supabase = await createClient()
+  const unauthorized = await requireUser(supabase)
+  if (unauthorized) return unauthorized
+
   const body = await request.json()
 
   const update: Record<string, unknown> = {}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { BlurFade } from "@/components/magicui/BlurFade";
 import { NumberTicker } from "@/components/magicui/NumberTicker";
 import { stats } from "@/lib/data";
@@ -20,11 +21,12 @@ export function About() {
             <div className="relative">
               <div className="relative aspect-[4/5] w-full overflow-hidden bg-warm-white">
                 {!imgFailed ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src="/images/cristhian-portrait.jpg"
                     alt="Cristhian Garzón, Colombian salsa instructor in Budapest"
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    className="object-cover"
                     onError={() => setImgFailed(true)}
                   />
                 ) : (

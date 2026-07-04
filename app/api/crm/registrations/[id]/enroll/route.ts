@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/supabase/apiAuth'
 
 function splitName(fullName: string) {
   const parts = fullName.trim().split(/\s+/)
@@ -22,6 +23,8 @@ export async function POST(
 ) {
   const { id } = await params
   const supabase = await createClient()
+  const unauthorized = await requireUser(supabase)
+  if (unauthorized) return unauthorized
 
   // 1. Fetch the registration
   const { data: reg, error: regErr } = await supabase

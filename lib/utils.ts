@@ -1,3 +1,17 @@
+import { format, parseISO } from 'date-fns'
+
+// Format a date string or Date object as "d MMM yyyy" — returns '—' if missing/invalid.
+export function fmtDate(d: string | Date | null | undefined): string {
+  if (!d) return '—'
+  try {
+    const date = typeof d === 'string' ? parseISO(d) : d
+    if (Number.isNaN(date.getTime())) return '—'
+    return format(date, 'd MMM yyyy')
+  } catch {
+    return '—'
+  }
+}
+
 // Convert 24h "HH:MM" or "HH:MM:SS" to "h:MM AM/PM"
 export function fmtTime(t: string | null | undefined): string {
   if (!t) return '—'

@@ -107,8 +107,8 @@ export default async function OfferingsPage({
                   <div className="mt-3 flex justify-between text-xs text-[#9A907F]">
                     <span>
                       {o.offering_type === 'course'
-                        ? `${o.default_price?.toLocaleString()} HUF / class`
-                        : o.default_price > 0 ? `${o.default_price.toLocaleString()} HUF` : 'Free'}
+                        ? `${(o.default_price ?? 0).toLocaleString()} HUF / class`
+                        : (o.default_price ?? 0) > 0 ? `${(o.default_price ?? 0).toLocaleString()} HUF` : 'Free'}
                     </span>
                     <Badge variant="gray">{o.offering_type === 'course' ? (o.level ?? o.offering_type) : (o.workshop_type ?? o.offering_type)}</Badge>
                   </div>

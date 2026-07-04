@@ -4,6 +4,8 @@ import { Badge } from '@/components/crm/ui'
 import { RegistrationActions } from '@/components/crm/RegistrationActions'
 import type { PublicRegistration } from '@/lib/supabase/types'
 
+const REGISTRATIONS_LIMIT = 100
+
 const STATUS_BADGE: Record<PublicRegistration['status'], 'orange' | 'blue' | 'green' | 'red'> = {
   pending:      'orange',
   payment_sent: 'blue',
@@ -30,6 +32,7 @@ export default async function RegistrationsPage({
     .from('public_registrations')
     .select('*')
     .order('created_at', { ascending: false })
+    .limit(REGISTRATIONS_LIMIT)
 
   if (status && status !== 'all') {
     query = query.eq('status', status)
@@ -139,6 +142,12 @@ export default async function RegistrationsPage({
             </div>
           ))}
         </div>
+      )}
+
+      {registrations.length === REGISTRATIONS_LIMIT && (
+        <p className="text-xs text-[#9A907F]">
+          Showing first {REGISTRATIONS_LIMIT} — refine filters to narrow results.
+        </p>
       )}
     </div>
   )
