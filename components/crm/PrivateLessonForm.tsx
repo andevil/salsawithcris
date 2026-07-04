@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { format } from 'date-fns'
@@ -11,6 +11,7 @@ import { Field, Select, Input, Textarea, Button, Card } from '@/components/crm/u
 const schema = z.object({
   person_id:           z.string().min(1, 'Required'),
   partner_person_id:   z.string().optional(),
+  package_id:          z.string().optional(),
   date:                z.string(),
   start_time:          z.string().optional(),
   end_time:            z.string().optional(),
@@ -25,18 +26,28 @@ const schema = z.object({
 
 type F = z.infer<typeof schema>
 
-export function PrivateLessonForm({ people }: { people: { id: string; full_name: string }[] }) {
+export function PrivateLessonForm({
+  people,
+  packages = [],
+}: {
+  people: { id: string; full_name: string }[]
+  packages?: { id: string; name: string; person_id: string }[]
+}) {
   const router = useRouter()
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<F>({
+  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<F>({
     resolver: zodResolver(schema),
     defaultValues: { date: format(new Date(), 'yyyy-MM-dd'), price: 14000, payment_status: 'unpaid', status: 'scheduled' },
   })
+
+  const selectedPersonId = useWatch({ control, name: 'person_id' })
+  const availablePackages = packages.filter(p => p.person_id === selectedPersonId)
 
   const onSubmit = async (values: F) => {
     const supabase = createClient()
     await supabase.from('private_lessons').insert({
       ...values,
       partner_person_id: values.partner_person_id || null,
+      package_id: values.package_id || null,
       start_time: values.start_time || null,
       end_time: values.end_time || null,
       location: values.location || null,
@@ -61,6 +72,12 @@ export function PrivateLessonForm({ people }: { people: { id: string; full_name:
             <Select id="partner_person_id" {...register('partner_person_id')}>
               <option value="">None</option>
               {people.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+            </Select>
+          </Field>
+          <Field label="Use package (optional)" htmlFor="package_id">
+            <Select id="package_id" {...register('package_id')} disabled={!selectedPersonId}>
+              <option value="">None — pay per lesson</option>
+              {availablePackages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </Select>
           </Field>
           <Field label="Date" htmlFor="date">

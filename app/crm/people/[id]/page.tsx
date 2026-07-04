@@ -17,20 +17,16 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     { data: person },
     { data: enrollments },
     { data: attendance },
-    { data: passes },
     { data: payments },
     { data: privateLessons },
-    { data: workshopRegs },
     { data: commLogs },
     { data: tasks },
   ] = await Promise.all([
     supabase.from('people').select('*').eq('id', id).single(),
-    supabase.from('course_enrollments').select('*, courses(name, day_of_week, start_time)').eq('person_id', id),
-    supabase.from('attendance').select('*, class_sessions(date, courses(name))').eq('person_id', id).order('created_at', { ascending: false }).limit(20),
-    supabase.from('passes').select('*').eq('person_id', id).order('valid_until', { ascending: false }),
+    supabase.from('enrollments').select('*, offerings(name, offering_type, day_of_week, start_time), packages(name)').eq('person_id', id),
+    supabase.from('attendance').select('*, sessions(date, offerings(name))').eq('person_id', id).order('created_at', { ascending: false }).limit(20),
     supabase.from('payments').select('*').eq('person_id', id).order('payment_date', { ascending: false }).limit(20),
     supabase.from('private_lessons').select('*').eq('person_id', id).order('date', { ascending: false }).limit(10),
-    supabase.from('workshop_registrations').select('*, workshops(name, date)').eq('person_id', id),
     supabase.from('communication_logs').select('*').eq('person_id', id).order('date', { ascending: false }).limit(10),
     supabase.from('tasks').select('*').eq('person_id', id).order('created_at', { ascending: false }),
   ])
@@ -88,16 +84,23 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
         </Card>
 
         <div className="space-y-6 lg:col-span-2">
-          {/* Active courses */}
+          {/* Enrollments */}
           <Card>
-            <h3 className="mb-4 font-display text-lg font-light text-[#171410]">Active courses</h3>
+            <h3 className="mb-4 font-display text-lg font-light text-[#171410]">Enrollments</h3>
             {enrollments?.length ? (
               <ul className="space-y-3">
                 {enrollments.map(e => (
                   <li key={e.id} className="flex items-center justify-between border-b border-[#E2DDD5] pb-3 last:border-0 last:pb-0">
                     <div>
-                      <p className="text-sm font-medium">{e.courses?.name}</p>
-                      <p className="text-xs text-[#9A907F]">{e.package_type} · {e.courses?.day_of_week}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{e.offerings?.name}</p>
+                        {e.offerings?.offering_type && (
+                          <Badge variant="gray">{e.offerings.offering_type}</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#9A907F]">
+                        {e.packages?.name ?? 'drop-in'} · {e.offerings?.day_of_week}
+                      </p>
                     </div>
                     <div className="flex gap-2">
                       <Badge variant={statusBadge(e.enrollment_status)}>{e.enrollment_status}</Badge>
@@ -107,29 +110,9 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-[#9A907F]">Not enrolled in any courses.</p>
+              <p className="text-sm text-[#9A907F]">Not enrolled in anything.</p>
             )}
           </Card>
-
-          {/* Active passes */}
-          {passes?.some(p => p.status === 'active') && (
-            <Card>
-              <h3 className="mb-4 font-display text-lg font-light text-[#171410]">Passes</h3>
-              <ul className="space-y-3">
-                {passes.filter(p => p.status === 'active').map(p => (
-                  <li key={p.id} className="flex items-center justify-between border-b border-[#E2DDD5] pb-3 last:border-0 last:pb-0">
-                    <div>
-                      <p className="text-sm font-medium">{p.package_name ?? p.package_type}</p>
-                      <p className="text-xs text-[#9A907F]">
-                        {p.remaining_credits} of {p.total_credits} credits remaining · expires {format(parseISO(p.valid_until), 'd MMM yyyy')}
-                      </p>
-                    </div>
-                    <Badge variant={statusBadge(p.status)}>{p.status}</Badge>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
         </div>
       </div>
 
@@ -144,8 +127,8 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             <tbody>
               {attendance.map(a => (
                 <tr key={a.id}>
-                  <Td>{a.class_sessions?.date ? format(parseISO(a.class_sessions.date), 'd MMM yyyy') : '—'}</Td>
-                  <Td>{a.class_sessions?.courses?.name ?? '—'}</Td>
+                  <Td>{a.sessions?.date ? format(parseISO(a.sessions.date), 'd MMM yyyy') : '—'}</Td>
+                  <Td>{a.sessions?.offerings?.name ?? '—'}</Td>
                   <Td><Badge variant={statusBadge(a.status)}>{a.status}</Badge></Td>
                 </tr>
               ))}

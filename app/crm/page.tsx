@@ -24,7 +24,6 @@ export default async function DashboardPage() {
     { count: waitlistCount },
     { data: sessions },
     { data: pendingPayments },
-    { data: expiringPasses },
     { data: openTasks },
     { data: expiringPackages },
     { data: unpaidPackages },
@@ -33,24 +32,18 @@ export default async function DashboardPage() {
     supabase.from('people').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     supabase.from('waitlist_entries').select('*', { count: 'exact', head: true }).in('status', ['new', 'contacted']),
     supabase
-      .from('class_sessions')
-      .select('*, courses(name, day_of_week, start_time, location)')
+      .from('sessions')
+      .select('*, offerings(name, day_of_week, start_time, location)')
       .eq('status', 'scheduled')
       .gte('date', todayStr)
       .lte('date', in7days)
       .order('date').order('start_time'),
     supabase
-      .from('course_enrollments')
-      .select('*, people(full_name, id), courses(name)')
+      .from('enrollments')
+      .select('*, people(full_name, id), offerings(name)')
       .in('payment_status', ['unpaid', 'overdue'])
       .eq('enrollment_status', 'active')
       .limit(6),
-    supabase
-      .from('passes')
-      .select('*, people(full_name, id)')
-      .eq('status', 'active')
-      .lte('valid_until', in14days)
-      .order('valid_until'),
     supabase
       .from('tasks')
       .select('*, people(full_name)')
@@ -59,7 +52,7 @@ export default async function DashboardPage() {
       .limit(5),
     // Package alerts
     supabase
-      .from('student_packages')
+      .from('packages')
       .select('id, name, expiry_date, people(id, full_name)')
       .eq('archived', false)
       .lte('expiry_date', in14days)
@@ -67,7 +60,7 @@ export default async function DashboardPage() {
       .order('expiry_date')
       .limit(5),
     supabase
-      .from('student_packages')
+      .from('packages')
       .select('id, name, people(id, full_name)')
       .eq('archived', false)
       .eq('payment_status', 'unpaid')
@@ -75,10 +68,10 @@ export default async function DashboardPage() {
       .limit(5),
     supabase
       .from('package_bonuses')
-      .select('id, label, student_packages!inner(id, name, expiry_date, archived, people(id, full_name))')
+      .select('id, label, packages!inner(id, name, expiry_date, archived, people(id, full_name))')
       .eq('used', false)
-      .eq('student_packages.archived', false)
-      .gt('student_packages.expiry_date', todayStr)
+      .eq('packages.archived', false)
+      .gt('packages.expiry_date', todayStr)
       .limit(5),
   ])
 
@@ -120,14 +113,14 @@ export default async function DashboardPage() {
         <Card>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-xl font-light text-[#171410]">Classes this week</h2>
-            <Link href="/crm/courses" className="text-xs text-[#C9A84C] hover:underline">View all</Link>
+            <Link href="/crm/offerings" className="text-xs text-[#C9A84C] hover:underline">View all</Link>
           </div>
           {sessions?.length ? (
             <ul className="space-y-3">
               {sessions.map(s => (
                 <li key={s.id} className="flex items-start justify-between border-b border-[#E2DDD5] pb-3 last:border-0 last:pb-0">
                   <div>
-                    <p className="text-sm font-medium text-[#171410]">{s.courses?.name}</p>
+                    <p className="text-sm font-medium text-[#171410]">{s.offerings?.name}</p>
                     <p className="mt-0.5 text-xs text-[#9A907F]">
                       {format(parseISO(s.date), 'EEE d MMM')} · {fmtTime(s.start_time)} · {s.location}
                     </p>
@@ -185,7 +178,7 @@ export default async function DashboardPage() {
                     <Link href={`/crm/people/${e.people?.id}`} className="text-sm font-medium text-[#171410] hover:text-[#C9A84C]">
                       {e.people?.full_name}
                     </Link>
-                    <p className="text-xs text-[#9A907F]">{e.courses?.name}</p>
+                    <p className="text-xs text-[#9A907F]">{e.offerings?.name}</p>
                   </div>
                   <Badge variant={statusBadge(e.payment_status)}>{e.payment_status}</Badge>
                 </li>
@@ -193,37 +186,6 @@ export default async function DashboardPage() {
             </ul>
           ) : (
             <EmptyState message="Everyone is paid up." />
-          )}
-        </Card>
-
-        {/* Expiring passes */}
-        <Card>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-light text-[#171410]">Passes expiring soon</h2>
-            <Link href="/crm/passes" className="text-xs text-[#C9A84C] hover:underline">All passes</Link>
-          </div>
-          {expiringPasses?.length ? (
-            <ul className="space-y-3">
-              {expiringPasses.map(p => (
-                <li key={p.id} className="flex items-center justify-between border-b border-[#E2DDD5] pb-3 last:border-0 last:pb-0">
-                  <div>
-                    <Link href={`/crm/people/${p.people?.id}`} className="text-sm font-medium text-[#171410] hover:text-[#C9A84C]">
-                      {p.people?.full_name}
-                    </Link>
-                    <p className="text-xs text-[#9A907F]">
-                      {p.remaining_credits} credit{p.remaining_credits !== 1 ? 's' : ''} left · expires {format(parseISO(p.valid_until), 'd MMM')}
-                    </p>
-                  </div>
-                  <Badge variant={
-                    isBefore(parseISO(p.valid_until), addDays(today, 7)) ? 'red' : 'orange'
-                  }>
-                    {format(parseISO(p.valid_until), 'd MMM')}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState message="No passes expiring in the next 2 weeks." />
           )}
         </Card>
 
@@ -286,7 +248,7 @@ export default async function DashboardPage() {
             </div>
             <ul className="space-y-3">
               {unusedBonuses!.map(b => {
-                const sp = b.student_packages as unknown as { id: string; name: string; people: { id: string; full_name: string } | null } | null
+                const sp = b.packages as unknown as { id: string; name: string; people: { id: string; full_name: string } | null } | null
                 return (
                   <li key={b.id} className="flex items-center justify-between border-b border-[#E2DDD5] pb-3 last:border-0 last:pb-0">
                     <div>

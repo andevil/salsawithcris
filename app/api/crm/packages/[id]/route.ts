@@ -10,7 +10,7 @@ export async function PATCH(
   const body = await request.json()
 
   const { data, error } = await supabase
-    .from('student_packages')
+    .from('packages')
     .update(body)
     .eq('id', id)
     .select()
@@ -29,7 +29,7 @@ export async function DELETE(
 
   // Archive instead of hard delete
   const { error } = await supabase
-    .from('student_packages')
+    .from('packages')
     .update({ archived: true })
     .eq('id', id)
 

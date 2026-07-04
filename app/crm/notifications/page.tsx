@@ -19,7 +19,7 @@ export default async function NotificationsPage() {
 
   const { data: notifications } = await supabase
     .from('package_notifications')
-    .select('*, people(id, full_name), student_packages(id, name)')
+    .select('*, people(id, full_name), packages(id, name)')
     .neq('status', 'dismissed')
     .order('created_at', { ascending: false })
 
@@ -64,12 +64,12 @@ export default async function NotificationsPage() {
                           {n.people.full_name}
                         </Link>
                       )}
-                      {n.student_packages && (
+                      {n.packages && (
                         <Link
-                          href={`/crm/packages/${n.student_packages.id}`}
+                          href={`/crm/packages/${n.packages.id}`}
                           className="text-xs text-[#9A907F] hover:text-[#C9A84C]"
                         >
-                          {n.student_packages.name}
+                          {n.packages.name}
                         </Link>
                       )}
                       <span className="text-xs text-[#9A907F]">

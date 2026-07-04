@@ -17,8 +17,8 @@ export default async function PaymentsPage() {
       .order('payment_date', { ascending: false })
       .limit(100),
     supabase
-      .from('course_enrollments')
-      .select('*, people(full_name, id), courses(name)')
+      .from('enrollments')
+      .select('*, people(full_name, id), offerings(name)')
       .in('payment_status', ['unpaid', 'overdue'])
       .eq('enrollment_status', 'active'),
   ])
@@ -74,7 +74,7 @@ export default async function PaymentsPage() {
                   {e.people?.full_name}
                 </Link>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-[#9A907F]">{e.courses?.name}</span>
+                  <span className="text-xs text-[#9A907F]">{e.offerings?.name}</span>
                   <Badge variant={statusBadge(e.payment_status)}>{e.payment_status}</Badge>
                 </div>
               </li>

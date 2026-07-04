@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 export default async function NewPaymentPage() {
   const supabase = await createClient()
   const { data: people } = await supabase.from('people').select('id, full_name').order('full_name')
-  const { data: courses } = await supabase.from('courses').select('id, name').eq('status', 'active')
+  const { data: offerings } = await supabase.from('offerings').select('id, name').eq('status', 'active')
 
   return (
     <div>
@@ -19,7 +19,7 @@ export default async function NewPaymentPage() {
         </Link>
       </div>
       <PageHeader title="Add payment" />
-      <PaymentForm people={people ?? []} courses={courses ?? []} />
+      <PaymentForm people={people ?? []} offerings={offerings ?? []} />
     </div>
   )
 }

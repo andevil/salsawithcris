@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { format, addDays, addWeeks, parseISO } from 'date-fns'
 import { Button, Field, Input } from '@/components/crm/ui'
-import type { StudentPackage } from '@/lib/supabase/types'
+import type { Package } from '@/lib/supabase/types'
 
 interface Props {
-  pkg: StudentPackage
+  pkg: Package
 }
 
 export function PackageActions({ pkg }: Props) {

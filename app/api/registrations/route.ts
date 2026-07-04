@@ -76,7 +76,7 @@ export async function POST(req: Request) {
   const supabase = await createClient()
   const { error } = await supabase
     .from('public_registrations')
-    .insert(parsed.data)
+    .insert({ ...parsed.data, offering_id: parsed.data.event_id })
 
   if (error) {
     console.error('Registration insert error:', error.message)

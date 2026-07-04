@@ -5,41 +5,37 @@ import { format, parseISO } from 'date-fns'
 import { MapPin, Clock, Users, CurrencyCircleDollar, InstagramLogo } from '@phosphor-icons/react/dist/ssr'
 import { fmtTime } from '@/lib/utils'
 import { AttendModal } from '@/components/AttendModal'
+import type { Session } from '@/lib/supabase/types'
 
 type Params = { slug: string }
 
 async function getEvent(slug: string) {
   const supabase = await createClient()
 
-  const { data: workshop } = await supabase
-    .from('workshops')
+  const { data: offering } = await supabase
+    .from('offerings')
     .select('*')
     .eq('slug', slug)
     .single()
-  if (workshop) {
-    const { count: enrolled } = await supabase
-      .from('workshop_registrations')
-      .select('*', { count: 'exact', head: true })
-      .eq('workshop_id', workshop.id)
-      .neq('status', 'cancelled')
-    return { kind: 'workshop' as const, event: workshop, enrolled: enrolled ?? 0 }
+  if (!offering) return null
+
+  const { count: enrolled } = await supabase
+    .from('enrollments')
+    .select('*', { count: 'exact', head: true })
+    .eq('offering_id', offering.id)
+    .in('enrollment_status', ['active', 'trial', 'registered'])
+
+  let sessions: Session[] = []
+  if (offering.recurrence === 'multi-session') {
+    const { data } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('offering_id', offering.id)
+      .order('date', { ascending: true })
+    sessions = data ?? []
   }
 
-  const { data: course } = await supabase
-    .from('courses')
-    .select('*')
-    .eq('slug', slug)
-    .single()
-  if (course) {
-    const { count: enrolled } = await supabase
-      .from('course_enrollments')
-      .select('*', { count: 'exact', head: true })
-      .eq('course_id', course.id)
-      .in('enrollment_status', ['active', 'trial'])
-    return { kind: 'course' as const, event: course, enrolled: enrolled ?? 0 }
-  }
-
-  return null
+  return { event: offering, enrolled: enrolled ?? 0, sessions }
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
@@ -49,7 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
   const { event } = result
   const title = `${event.name} — Salsita with Cris`
-  const description = ('description' in event && event.description)
+  const description = event.description
     ? event.description
     : `Join us for ${event.name} with Cristhian Garzón in Budapest.`
 
@@ -78,7 +74,8 @@ export default async function EventPage({ params }: { params: Promise<Params> })
   const result = await getEvent(slug)
   if (!result) notFound()
 
-  const { kind, event, enrolled } = result
+  const { event, enrolled, sessions } = result
+  const kind = event.offering_type
 
   let promotions: PromotionRow[] = []
   if (kind === 'course') {
@@ -91,12 +88,12 @@ export default async function EventPage({ params }: { params: Promise<Params> })
     promotions = (data ?? []) as PromotionRow[]
   }
 
-  const dateStr = 'date' in event && event.date
-    ? format(parseISO(event.date), 'EEEE, d MMMM yyyy')
+  const dateStr = kind === 'workshop' && event.start_date
+    ? format(parseISO(event.start_date), 'EEEE, d MMMM yyyy')
     : null
 
-  const startDateStr = 'start_date' in event && event.start_date
-    ? format(parseISO(event.start_date as string), 'd MMMM yyyy')
+  const startDateStr = kind === 'course' && event.start_date
+    ? format(parseISO(event.start_date), 'd MMMM yyyy')
     : null
 
   const timeStr = event.start_time
@@ -105,13 +102,11 @@ export default async function EventPage({ params }: { params: Promise<Params> })
       : fmtTime(event.start_time)
     : null
 
-  const priceStr = 'price' in event && event.price != null
-    ? event.price === 0 ? 'Free' : `${event.price.toLocaleString()} HUF`
-    : 'default_price' in event
-      ? `${(event.default_price as number).toLocaleString()} HUF / class`
-      : null
+  const priceStr = kind === 'workshop'
+    ? (event.default_price === 0 ? 'Free' : `${event.default_price.toLocaleString()} HUF`)
+    : `${event.default_price.toLocaleString()} HUF / class`
 
-  const capacity = event.capacity as number | null | undefined
+  const capacity = event.capacity
   const availableSpots = capacity != null ? Math.max(0, capacity - enrolled) : null
 
   return (
@@ -131,7 +126,7 @@ export default async function EventPage({ params }: { params: Promise<Params> })
         {/* Title */}
         <div className="mb-8">
           <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-widest text-[#C9A84C]">
-            {kind === 'workshop' ? (event.type ?? 'Event') : `${kind}${'level' in event && event.level ? ` · ${event.level}` : ''}`}
+            {kind === 'workshop' ? (event.workshop_type ?? 'Event') : `${kind}${event.level ? ` · ${event.level}` : ''}`}
           </span>
           <h1 className="font-display text-3xl font-light text-[#171410] sm:text-5xl">{event.name}</h1>
         </div>
@@ -149,14 +144,14 @@ export default async function EventPage({ params }: { params: Promise<Params> })
               </div>
             </div>
           )}
-          {kind === 'course' && ('day_of_week' in event || startDateStr) && (
+          {kind === 'course' && (event.day_of_week || startDateStr) && (
             <div className="flex items-start gap-3 border border-[#E2DDD5] bg-white p-4">
               <Clock size={20} weight="light" className="mt-0.5 shrink-0 text-[#C9A84C]" />
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-[#9A907F]">Schedule</p>
-                {'day_of_week' in event && event.day_of_week && (
+                {event.day_of_week && (
                   <p className="mt-1 text-sm capitalize text-[#171410]">
-                    Every {event.day_of_week as string}{timeStr ? ` · ${timeStr}` : ''}
+                    Every {event.day_of_week}{timeStr ? ` · ${timeStr}` : ''}
                   </p>
                 )}
                 {startDateStr && (
@@ -196,8 +191,27 @@ export default async function EventPage({ params }: { params: Promise<Params> })
           )}
         </div>
 
+        {/* Multi-session dates */}
+        {event.recurrence === 'multi-session' && sessions.length > 0 && (
+          <div className="mb-8 border border-[#E2DDD5] bg-white p-6">
+            <h2 className="mb-3 font-display text-xl font-light text-[#171410]">Session dates</h2>
+            <ul className="divide-y divide-[#E2DDD5]">
+              {sessions.map(s => (
+                <li key={s.id} className="flex items-baseline justify-between py-2 text-sm first:pt-0">
+                  <span className="text-[#171410]">{format(parseISO(s.date), 'EEEE, d MMMM yyyy')}</span>
+                  {s.start_time && (
+                    <span className="text-xs text-[#9A907F]">
+                      {fmtTime(s.start_time)}{s.end_time ? ` – ${fmtTime(s.end_time)}` : ''}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Description */}
-        {'description' in event && event.description && (
+        {event.description && (
           <div className="mb-8 border border-[#E2DDD5] bg-white p-6">
             <h2 className="mb-3 font-display text-xl font-light text-[#171410]">About this event</h2>
             <p className="whitespace-pre-line text-sm leading-relaxed text-[#6B6155]">{event.description}</p>
@@ -210,14 +224,14 @@ export default async function EventPage({ params }: { params: Promise<Params> })
             <h2 className="mb-4 font-display text-xl font-light text-[#171410]">Pricing</h2>
             <div className="divide-y divide-[#E2DDD5]">
               {/* Monthly pass from course */}
-              {'monthly_pass_price' in event && event.monthly_pass_price != null && (event.monthly_pass_price as number) > 0 && (
+              {event.monthly_pass_price != null && event.monthly_pass_price > 0 && (
                 <div className="flex items-baseline justify-between py-3 first:pt-0">
                   <div>
                     <span className="text-sm text-[#171410]">Monthly pass</span>
                     <span className="ml-2 text-xs text-[#9A907F]">4 classes / month</span>
                   </div>
                   <span className="text-sm font-medium text-[#C9A84C]">
-                    {(event.monthly_pass_price as number).toLocaleString()} HUF
+                    {event.monthly_pass_price.toLocaleString()} HUF
                   </span>
                 </div>
               )}
@@ -252,7 +266,7 @@ export default async function EventPage({ params }: { params: Promise<Params> })
             eventId={event.id}
             eventType={kind}
             eventName={event.name}
-            isPartnerwork={kind === 'course' && 'style' in event && event.style === 'partnerwork'}
+            isPartnerwork={kind === 'course' && event.style === 'partnerwork'}
           />
           <a
             href="https://www.instagram.com/andresgarzong"

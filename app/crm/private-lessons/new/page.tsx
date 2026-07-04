@@ -8,7 +8,10 @@ export const dynamic = 'force-dynamic'
 
 export default async function NewPrivateLessonPage() {
   const supabase = await createClient()
-  const { data: people } = await supabase.from('people').select('id, full_name').order('full_name')
+  const [{ data: people }, { data: packages }] = await Promise.all([
+    supabase.from('people').select('id, full_name').order('full_name'),
+    supabase.from('packages').select('id, name, person_id').eq('archived', false).order('created_at', { ascending: false }),
+  ])
   return (
     <div>
       <div className="mb-6">
@@ -17,7 +20,7 @@ export default async function NewPrivateLessonPage() {
         </Link>
       </div>
       <PageHeader title="Schedule private lesson" />
-      <PrivateLessonForm people={people ?? []} />
+      <PrivateLessonForm people={people ?? []} packages={packages ?? []} />
     </div>
   )
 }

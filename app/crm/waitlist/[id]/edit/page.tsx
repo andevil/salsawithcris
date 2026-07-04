@@ -21,7 +21,7 @@ export default async function EditWaitlistPage({ params }: { params: Promise<{ i
     <div>
       <div className="mb-6">
         <Link href="/crm/waitlist" className="flex items-center gap-1 text-sm text-[#9A907F] hover:text-[#C9A84C]">
-          <ArrowLeft size={14} weight="light" /> Waitlist
+          <ArrowLeft size={14} weight="light" /> Back to Waitlist
         </Link>
       </div>
       <PageHeader title={`Update — ${entry.people?.full_name}`} />

@@ -21,7 +21,7 @@ export default async function PackagesPage({
   const in14days = format(addDays(today, 14), 'yyyy-MM-dd')
 
   let query = supabase
-    .from('student_packages')
+    .from('packages')
     .select('*, people(id, full_name), package_bonuses(*)')
     .order('created_at', { ascending: false })
 
@@ -42,7 +42,7 @@ export default async function PackagesPage({
 
   // Count for expiry banner
   const { count: expiringCount } = await supabase
-    .from('student_packages')
+    .from('packages')
     .select('*', { count: 'exact', head: true })
     .eq('archived', false)
     .lte('expiry_date', in14days)

@@ -63,7 +63,12 @@ export default async function RegistrationsPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-3xl font-light text-[#171410]">Registrations</h1>
+        <div>
+          <h1 className="font-display text-3xl font-light text-[#171410]">Registrations</h1>
+          <p className="mt-1 text-sm text-[#9A907F]">
+            Public sign-ups land here, then get converted into People + Enrollments.
+          </p>
+        </div>
       </div>
 
       {/* Filter tabs */}

@@ -10,14 +10,14 @@ import { createClient } from '@/lib/supabase/client'
 import { Field, Input, Select, Textarea, Button, Card } from '@/components/crm/ui'
 import { TimeSelect } from '@/components/crm/TimeSelect'
 import { ImageUpload } from '@/components/crm/ImageUpload'
-import type { Course } from '@/lib/supabase/types'
+import type { Offering, OfferingType } from '@/lib/supabase/types'
 
 const DOW_MAP: Record<string, 0 | 1 | 2 | 3 | 4 | 5 | 6> = {
   sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
   thursday: 4, friday: 5, saturday: 6,
 }
 
-async function syncSessions(supabase: ReturnType<typeof createClient>, courseId: string, values: {
+async function syncSessions(supabase: ReturnType<typeof createClient>, offeringId: string, values: {
   day_of_week?: string; start_date?: string; end_date?: string
   start_time?: string; end_time?: string; location?: string
 }) {
@@ -33,18 +33,18 @@ async function syncSessions(supabase: ReturnType<typeof createClient>, courseId:
   const sessions = []
   while (isBefore(current, endDate) || isEqual(current, endDate)) {
     sessions.push({
-      course_id:  courseId,
-      date:       format(current, 'yyyy-MM-dd'),
-      start_time: values.start_time || null,
-      end_time:   values.end_time   || null,
-      location:   values.location   || null,
-      status:     'scheduled',
+      offering_id: offeringId,
+      date:        format(current, 'yyyy-MM-dd'),
+      start_time:  values.start_time || null,
+      end_time:    values.end_time   || null,
+      location:    values.location   || null,
+      status:      'scheduled',
     })
     current = addWeeks(current, 1)
   }
 
   if (sessions.length > 0) {
-    await supabase.from('class_sessions').upsert(sessions, { onConflict: 'course_id,date' })
+    await supabase.from('sessions').upsert(sessions, { onConflict: 'offering_id,date' })
   }
 
   // Remove scheduled sessions that now fall outside the date range.
@@ -52,9 +52,9 @@ async function syncSessions(supabase: ReturnType<typeof createClient>, courseId:
   const startStr = format(rangeStart, 'yyyy-MM-dd')
   const endStr   = format(endDate,    'yyyy-MM-dd')
   await supabase
-    .from('class_sessions')
+    .from('sessions')
     .delete()
-    .eq('course_id', courseId)
+    .eq('offering_id', offeringId)
     .eq('status', 'scheduled')
     .or(`date.lt.${startStr},date.gt.${endStr}`)
 }
@@ -64,6 +64,7 @@ function toSlug(s: string) {
 }
 
 const schema = z.object({
+  offering_type:      z.enum(['course', 'workshop']),
   name:               z.string().min(1, 'Required'),
   slug:               z.string().regex(/^[a-z0-9-]*$/, 'Only lowercase letters, numbers and hyphens').optional(),
   style:              z.string(),
@@ -73,6 +74,8 @@ const schema = z.object({
   day_of_week:        z.string().optional(),
   start_time:         z.string().optional(),
   end_time:           z.string().optional(),
+  recurrence:         z.string(),
+  workshop_type:      z.string().optional(),
   start_date:         z.string().optional(),
   end_date:           z.string().optional(),
   capacity:           z.coerce.number().optional(),
@@ -88,37 +91,42 @@ const schema = z.object({
 
 type F = z.infer<typeof schema>
 
-export function CourseForm({ course }: { course?: Course }) {
+export function OfferingForm({ offering, offeringType }: { offering?: Offering; offeringType?: OfferingType }) {
   const router = useRouter()
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(course?.thumbnail_url ?? null)
-  const [slugTouched, setSlugTouched] = useState(!!course?.slug)
-  const [multiDay, setMultiDay] = useState(!!course?.end_date)
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(offering?.thumbnail_url ?? null)
+  const [slugTouched, setSlugTouched] = useState(!!offering?.slug)
+  const [multiDay, setMultiDay] = useState(!!offering?.end_date)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const { register, handleSubmit, control, setValue, formState: { errors, isSubmitting } } = useForm<F>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name:               course?.name               ?? '',
-      slug:               course?.slug               ?? '',
-      style:              course?.style              ?? 'partnerwork',
-      level:              course?.level              ?? '',
-      description:        course?.description        ?? '',
-      location:           course?.location           ?? '',
-      day_of_week:        course?.day_of_week        ?? '',
-      start_time:         course?.start_time         ?? '',
-      end_time:           course?.end_time           ?? '',
-      capacity:           course?.capacity           ?? undefined,
-      status:             course?.status             ?? 'active',
-      season:             course?.season             ?? '',
-      start_date:         course?.start_date         ?? '',
-      end_date:           course?.end_date           ?? '',
-      default_price:      course?.default_price      ?? 4000,
-      monthly_pass_price: course?.monthly_pass_price ?? 15000,
-      notes:              course?.notes              ?? '',
+      offering_type:      offering?.offering_type      ?? offeringType ?? 'course',
+      name:               offering?.name               ?? '',
+      slug:               offering?.slug               ?? '',
+      style:              offering?.style              ?? 'partnerwork',
+      level:              offering?.level              ?? '',
+      description:        offering?.description        ?? '',
+      location:           offering?.location           ?? '',
+      day_of_week:        offering?.day_of_week        ?? '',
+      start_time:         offering?.start_time         ?? '',
+      end_time:           offering?.end_time           ?? '',
+      recurrence:         offering?.recurrence         ?? 'weekly',
+      workshop_type:      offering?.workshop_type       ?? '',
+      capacity:           offering?.capacity           ?? undefined,
+      status:             offering?.status             ?? 'active',
+      season:             offering?.season             ?? '',
+      start_date:         offering?.start_date         ?? '',
+      end_date:           offering?.end_date           ?? '',
+      default_price:      offering?.default_price      ?? 4000,
+      monthly_pass_price: offering?.monthly_pass_price ?? 15000,
+      notes:              offering?.notes              ?? '',
     },
   })
 
   const nameValue = useWatch({ control, name: 'name' })
+  const typeValue = useWatch({ control, name: 'offering_type' })
+  const isCourse  = typeValue === 'course'
 
   useEffect(() => {
     if (!slugTouched && nameValue) {
@@ -134,9 +142,10 @@ export function CourseForm({ course }: { course?: Course }) {
       slug:          values.slug || null,
       level:         values.level || null,
       location:      values.location || null,
-      day_of_week:   values.day_of_week || null,
+      day_of_week:   isCourse ? (values.day_of_week || null) : null,
       start_time:    values.start_time || null,
       end_time:      values.end_time || null,
+      workshop_type: !isCourse ? (values.workshop_type || null) : null,
       season:        values.season || null,
       notes:         values.notes || null,
       start_date:    values.start_date || null,
@@ -144,16 +153,16 @@ export function CourseForm({ course }: { course?: Course }) {
       thumbnail_url: thumbnailUrl,
     }
 
-    if (course) {
-      const { error } = await supabase.from('courses').update(payload).eq('id', course.id)
+    if (offering) {
+      const { error } = await supabase.from('offerings').update(payload).eq('id', offering.id)
       if (error) { setSubmitError(error.message); return }
       // Sync sessions whenever end_date is updated and still in the future
-      await syncSessions(supabase, course.id, values)
-      router.push(`/crm/courses/${course.id}`)
+      if (isCourse) await syncSessions(supabase, offering.id, values)
+      router.push(`/crm/offerings/${offering.id}`)
     } else {
-      const { data, error } = await supabase.from('courses').insert(payload).select().single()
+      const { data, error } = await supabase.from('offerings').insert(payload).select().single()
       if (error) { setSubmitError(error.message); return }
-      router.push(`/crm/courses/${data?.id}`)
+      router.push(`/crm/offerings/${data?.id}`)
     }
     router.refresh()
   }
@@ -163,7 +172,16 @@ export function CourseForm({ course }: { course?: Course }) {
       <Card className="mb-6">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
 
-          <Field label="Course name" htmlFor="name" error={errors.name?.message} className="sm:col-span-2">
+          {!offering && (
+            <Field label="Offering type" htmlFor="offering_type" className="sm:col-span-2">
+              <Select id="offering_type" {...register('offering_type')} disabled={!!offeringType}>
+                <option value="course">Course</option>
+                <option value="workshop">Workshop / Event</option>
+              </Select>
+            </Field>
+          )}
+
+          <Field label={isCourse ? 'Course name' : 'Event name'} htmlFor="name" error={errors.name?.message} className="sm:col-span-2">
             <Input id="name" {...register('name')} />
           </Field>
 
@@ -184,7 +202,7 @@ export function CourseForm({ course }: { course?: Course }) {
 
           <Field label="Style" htmlFor="style">
             <Select id="style" {...register('style')}>
-              {['partnerwork','caleña','fusion','private','workshop','other'].map(s => (
+              {['partnerwork','caleña','fusion','other'].map(s => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </Select>
@@ -197,14 +215,37 @@ export function CourseForm({ course }: { course?: Course }) {
               ))}
             </Select>
           </Field>
-          <Field label="Day of week" htmlFor="day_of_week">
-            <Select id="day_of_week" {...register('day_of_week')}>
-              <option value="">—</option>
-              {['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => (
-                <option key={d} value={d}>{d}</option>
+
+          <Field label="Recurrence" htmlFor="recurrence">
+            <Select id="recurrence" {...register('recurrence')}>
+              {['weekly','one-off','multi-session'].map(r => (
+                <option key={r} value={r}>{r}</option>
               ))}
             </Select>
           </Field>
+
+          {!isCourse && (
+            <Field label="Workshop type" htmlFor="workshop_type">
+              <Select id="workshop_type" {...register('workshop_type')}>
+                <option value="">—</option>
+                {['colombian-workshop','caleña-workshop','social-practice','bbq','party','guest-teacher','festival','corporate','bachelorette','wedding','show','other'].map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </Select>
+            </Field>
+          )}
+
+          {isCourse && (
+            <Field label="Day of week" htmlFor="day_of_week">
+              <Select id="day_of_week" {...register('day_of_week')}>
+                <option value="">—</option>
+                {['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </Select>
+            </Field>
+          )}
+
           <Field label="Location" htmlFor="location">
             <Select id="location" {...register('location')}>
               <option value="">—</option>
@@ -251,7 +292,7 @@ export function CourseForm({ course }: { course?: Course }) {
           </Field>
           <Field label="Status" htmlFor="status">
             <Select id="status" {...register('status')}>
-              {['planned','active','paused','finished'].map(s => (
+              {['planned','active','paused','finished','cancelled'].map(s => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </Select>
@@ -259,15 +300,24 @@ export function CourseForm({ course }: { course?: Course }) {
           <Field label="Default price (HUF)" htmlFor="default_price">
             <Input id="default_price" type="number" step="500" {...register('default_price')} />
           </Field>
-          <Field label="Monthly pass price (HUF)" htmlFor="monthly_pass_price">
-            <Input id="monthly_pass_price" type="number" step="500" {...register('monthly_pass_price')} />
+          {isCourse && (
+            <Field label="Monthly pass price (HUF)" htmlFor="monthly_pass_price">
+              <Input id="monthly_pass_price" type="number" step="500" {...register('monthly_pass_price')} />
+            </Field>
+          )}
+          <Field label="Season" htmlFor="season">
+            <Input id="season" {...register('season')} />
           </Field>
           <Field label="Notes" htmlFor="notes" className="sm:col-span-2">
             <Textarea id="notes" rows={3} {...register('notes')} />
           </Field>
 
+          <Field label="Description" htmlFor="description" className="sm:col-span-2">
+            <Textarea id="description" rows={3} {...register('description')} />
+          </Field>
+
           <Field label="Thumbnail image" className="sm:col-span-2">
-            <ImageUpload value={thumbnailUrl} onChange={setThumbnailUrl} folder="courses" />
+            <ImageUpload value={thumbnailUrl} onChange={setThumbnailUrl} folder="offerings" />
           </Field>
         </div>
       </Card>
@@ -278,7 +328,7 @@ export function CourseForm({ course }: { course?: Course }) {
 
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving…' : course ? 'Save changes' : 'Add course'}
+          {isSubmitting ? 'Saving…' : offering ? 'Save changes' : isCourse ? 'Add course' : 'Create event'}
         </Button>
         <Button type="button" variant="secondary" onClick={() => router.back()}>Cancel</Button>
       </div>

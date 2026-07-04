@@ -15,7 +15,7 @@ export default async function EditPromotionPage({ params }: { params: Promise<{ 
   const [{ data: promotion }, { count: packagesCount }] = await Promise.all([
     supabase.from('promotions').select('*').eq('id', id).single(),
     supabase
-      .from('student_packages')
+      .from('packages')
       .select('*', { count: 'exact', head: true })
       .eq('promotion_id', id),
   ])

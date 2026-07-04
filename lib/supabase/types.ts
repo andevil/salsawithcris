@@ -27,48 +27,48 @@ export interface Person {
   updated_at: string
 }
 
-export interface Course {
+// ---------------------------------------------------------------------------
+// OFFERINGS (courses + workshops unified, migration 005)
+// ---------------------------------------------------------------------------
+
+export type OfferingType   = 'course' | 'workshop'
+export type OfferingStyle  = 'partnerwork' | 'caleña' | 'fusion' | 'other'
+export type OfferingStatus = 'planned' | 'active' | 'paused' | 'finished' | 'cancelled'
+export type Recurrence     = 'weekly' | 'one-off' | 'multi-session'
+export type WorkshopType =
+  | 'colombian-workshop' | 'caleña-workshop' | 'social-practice' | 'bbq' | 'party'
+  | 'guest-teacher' | 'festival' | 'corporate' | 'bachelorette' | 'wedding' | 'show' | 'other'
+
+export interface Offering {
   id: string
+  offering_type: OfferingType
   name: string
-  style: 'partnerwork' | 'caleña' | 'fusion' | 'private' | 'workshop' | 'other'
+  style: OfferingStyle
   level: string | null
   description: string | null
   location: string | null
   day_of_week: string | null
   start_time: string | null
   end_time: string | null
-  capacity: number | null
-  status: 'planned' | 'active' | 'paused' | 'finished'
+  recurrence: Recurrence
+  workshop_type: WorkshopType | null
   season: string | null
-  default_price: number
-  monthly_pass_price: number
-  notes: string | null
-  slug: string | null
-  thumbnail_url: string | null
   start_date: string | null
   end_date: string | null
+  capacity: number | null
+  default_price: number
+  monthly_pass_price: number
+  status: OfferingStatus
+  slug: string | null
+  thumbnail_url: string | null
+  notes: string | null
   created_at: string
   updated_at: string
 }
 
-export interface CourseEnrollment {
+export interface Session {
   id: string
-  person_id: string
-  course_id: string
-  enrollment_status: 'active' | 'paused' | 'dropped' | 'completed' | 'trial' | 'invited'
-  start_date: string | null
-  end_date: string | null
-  package_type: 'drop-in' | 'monthly-pass' | 'two-month-pass' | 'three-month-pass' | 'custom'
-  payment_status: 'unpaid' | 'partial' | 'paid' | 'overdue'
-  notes: string | null
-  created_at: string
-  people?: Person
-  courses?: Course
-}
-
-export interface ClassSession {
-  id: string
-  course_id: string
+  offering_id: string
   date: string
   start_time: string | null
   end_time: string | null
@@ -77,7 +77,23 @@ export interface ClassSession {
   teacher_notes: string | null
   status: 'scheduled' | 'completed' | 'cancelled'
   created_at: string
-  courses?: Course
+  offerings?: Offering
+}
+
+export interface Enrollment {
+  id: string
+  person_id: string
+  offering_id: string
+  enrollment_status: 'active' | 'paused' | 'dropped' | 'completed' | 'trial' | 'invited' | 'registered' | 'no-show'
+  package_id: string | null
+  payment_status: 'unpaid' | 'partial' | 'paid' | 'overdue' | 'refunded'
+  start_date: string | null
+  end_date: string | null
+  notes: string | null
+  created_at: string
+  people?: Person
+  offerings?: Offering
+  packages?: Package
 }
 
 export interface Attendance {
@@ -89,7 +105,7 @@ export interface Attendance {
   notes: string | null
   created_at: string
   people?: Person
-  class_sessions?: ClassSession
+  sessions?: Session
 }
 
 export interface Payment {
@@ -99,10 +115,10 @@ export interface Payment {
   currency: string
   payment_method: string | null
   payment_type: string | null
-  related_course_id: string | null
+  related_offering_id: string | null
   related_session_id: string | null
   related_private_lesson_id: string | null
-  related_workshop_id: string | null
+  related_package_id: string | null
   payment_date: string
   period_start: string | null
   period_end: string | null
@@ -111,24 +127,7 @@ export interface Payment {
   admin_notes: string | null
   created_at: string
   people?: Person
-}
-
-export interface Pass {
-  id: string
-  person_id: string
-  package_name: string | null
-  package_type: 'monthly-pass' | 'two-month-pass' | 'three-month-pass' | 'private-lesson-pack' | 'custom'
-  total_credits: number
-  used_credits: number
-  remaining_credits: number
-  valid_from: string
-  valid_until: string
-  status: 'active' | 'expired' | 'used-up' | 'cancelled'
-  related_payment_id: string | null
-  notes: string | null
-  created_at: string
-  updated_at: string
-  people?: Person
+  offerings?: Offering
 }
 
 export interface WaitlistEntry {
@@ -160,29 +159,11 @@ export interface PrivateLesson {
   price: number
   room_rental_included: boolean
   payment_status: string
-  pass_id: string | null
+  package_id: string | null
   status: 'scheduled' | 'completed' | 'cancelled' | 'no-show'
   notes: string | null
   created_at: string
   people?: Person
-}
-
-export interface Workshop {
-  id: string
-  name: string
-  type: string | null
-  date: string
-  start_time: string | null
-  end_time: string | null
-  location: string | null
-  capacity: number | null
-  price: number
-  status: 'planned' | 'active' | 'completed' | 'cancelled'
-  description: string | null
-  notes: string | null
-  slug: string | null
-  thumbnail_url: string | null
-  created_at: string
 }
 
 export interface Task {
@@ -190,8 +171,7 @@ export interface Task {
   title: string
   description: string | null
   person_id: string | null
-  related_course_id: string | null
-  related_workshop_id: string | null
+  related_offering_id: string | null
   due_date: string | null
   priority: 'low' | 'medium' | 'high'
   status: 'open' | 'done' | 'dismissed'
@@ -240,7 +220,7 @@ export interface Promotion {
   updated_at: string
 }
 
-export interface StudentPackage {
+export interface Package {
   id: string
   person_id: string
   promotion_id: string | null
@@ -298,7 +278,7 @@ export interface PackageNotification {
   viewed_at: string | null
   dismissed_at: string | null
   people?: Person
-  student_packages?: StudentPackage
+  packages?: Package
 }
 
 export interface PublicRegistration {
@@ -306,6 +286,7 @@ export interface PublicRegistration {
   event_type:          'course' | 'workshop'
   event_id:            string
   event_name:          string
+  offering_id:         string | null
   name:                string
   email:               string | null
   instagram:           string | null
@@ -319,6 +300,3 @@ export interface PublicRegistration {
   notes:               string | null
   created_at:          string
 }
-
-// Re-export with person_id added (migration 005)
-// The PublicRegistration interface above is patched below:

@@ -5,12 +5,8 @@ import { usePathname } from 'next/navigation'
 import {
   House,
   Users,
-  ListChecks,
   CalendarCheck,
   CurrencyCircleDollar,
-  Ticket,
-  Chalkboard,
-  ClipboardText,
   Star,
   GearSix,
   X,
@@ -18,23 +14,21 @@ import {
   Tag,
   Bell,
   EnvelopeSimple,
+  CalendarBlank,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 const nav = [
   { href: '/crm',                  label: 'Dashboard',      icon: House },
   { href: '/crm/people',           label: 'People',         icon: Users },
-  { href: '/crm/waitlist',         label: 'Waitlist',       icon: ListChecks },
-  { href: '/crm/courses',          label: 'Courses',        icon: Chalkboard },
+  { href: '/crm/offerings',        label: 'Offerings',      icon: CalendarBlank },
   { href: '/crm/attendance',       label: 'Attendance',     icon: CalendarCheck },
   { href: '/crm/payments',         label: 'Payments',       icon: CurrencyCircleDollar },
-  { href: '/crm/passes',           label: 'Passes',         icon: Ticket },
   { href: '/crm/packages',         label: 'Packages',       icon: Package },
   { href: '/crm/promotions',       label: 'Promotions',     icon: Tag },
   { href: '/crm/notifications',    label: 'Notifications',  icon: Bell },
   { href: '/crm/registrations',    label: 'Registrations',  icon: EnvelopeSimple },
   { href: '/crm/private-lessons',  label: 'Private Lessons',icon: Star },
-  { href: '/crm/workshops',        label: 'Workshops',      icon: ClipboardText },
   { href: '/crm/settings',         label: 'Settings',       icon: GearSix },
 ]
 

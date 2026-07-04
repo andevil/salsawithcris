@@ -33,9 +33,6 @@ export async function POST(
   if (regErr || !reg) {
     return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
   }
-  if (reg.event_type !== 'course') {
-    return NextResponse.json({ error: 'Only course registrations can be enrolled this way' }, { status: 400 })
-  }
 
   // 2. Find or create person
   let personId: string
@@ -71,20 +68,20 @@ export async function POST(
     personId = newPerson.id
   }
 
-  // 3. Upsert course enrollment
+  // 3. Upsert enrollment
+  const offeringId = reg.offering_id ?? reg.event_id
   const today = new Date().toISOString().split('T')[0]
   const { error: enrollErr } = await supabase
-    .from('course_enrollments')
+    .from('enrollments')
     .upsert(
       {
         person_id:         personId,
-        course_id:         reg.event_id,
-        enrollment_status: 'active',
+        offering_id:       offeringId,
+        enrollment_status: reg.event_type === 'course' ? 'active' : 'registered',
         payment_status:    'paid',
-        package_type:      'drop-in',
         start_date:        today,
       },
-      { onConflict: 'person_id,course_id' }
+      { onConflict: 'person_id,offering_id' }
     )
 
   if (enrollErr) {

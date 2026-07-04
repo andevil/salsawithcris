@@ -3,7 +3,7 @@ import { format, parseISO } from 'date-fns'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader, Badge, Card, Button, Table, Th, Td, EmptyState } from '@/components/crm/ui'
 import { statusBadge } from '@/components/crm/ui'
-import { Plus } from '@phosphor-icons/react/dist/ssr'
+import { Plus, ArrowLeft } from '@phosphor-icons/react/dist/ssr'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +36,12 @@ export default async function WaitlistPage({
 
   return (
     <div>
+      <div className="mb-6">
+        <Link href="/crm/people?status=waitlist" className="flex items-center gap-1 text-sm text-[#9A907F] hover:text-[#C9A84C]">
+          <ArrowLeft size={14} weight="light" /> Back to People
+        </Link>
+      </div>
+
       <PageHeader
         title="Waitlist"
         subtitle={`${entries?.length ?? 0} total entries`}

@@ -5,65 +5,81 @@ import { createClient } from '@/lib/supabase/server'
 import { PageHeader, Badge, Card, Button, Table, Th, Td, EmptyState } from '@/components/crm/ui'
 import { statusBadge } from '@/components/crm/ui'
 import { PencilSimple, ArrowLeft, Plus, ArrowSquareOut } from '@phosphor-icons/react/dist/ssr'
-import { CourseSessionActions } from '@/components/crm/CourseSessionActions'
+import { SessionActions } from '@/components/crm/SessionActions'
 import { DeleteButton } from '@/components/crm/DeleteButton'
 import { PendingRegistrationActions } from '@/components/crm/PendingRegistrationActions'
 import { fmtTime } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
-export default async function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OfferingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: course }, { data: enrollments }, { data: sessions }, { data: pending }] = await Promise.all([
-    supabase.from('courses').select('*').eq('id', id).single(),
+  const [{ data: offering }, { data: enrollments }, { data: sessions }, { data: pendingByOffering }, { data: pendingLegacy }] = await Promise.all([
+    supabase.from('offerings').select('*').eq('id', id).single(),
     supabase
-      .from('course_enrollments')
-      .select('*, people(id, full_name, dance_role, dance_experience)')
-      .eq('course_id', id),
+      .from('enrollments')
+      .select('*, people(id, full_name, dance_role, dance_experience), packages(id, name)')
+      .eq('offering_id', id),
     supabase
-      .from('class_sessions')
+      .from('sessions')
       .select('*')
-      .eq('course_id', id)
+      .eq('offering_id', id)
       .order('date', { ascending: false })
       .limit(20),
     supabase
       .from('public_registrations')
       .select('*')
+      .eq('offering_id', id)
+      .in('status', ['pending', 'payment_sent'])
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('public_registrations')
+      .select('*')
+      .is('offering_id', null)
       .eq('event_id', id)
-      .eq('event_type', 'course')
       .in('status', ['pending', 'payment_sent'])
       .order('created_at', { ascending: true }),
   ])
 
-  if (!course) notFound()
+  if (!offering) notFound()
 
+  // Merge pending registrations matched by offering_id and legacy rows matched by event_id, de-duped by id
+  const pendingMap = new Map<string, NonNullable<typeof pendingByOffering>[number]>()
+  ;[...(pendingByOffering ?? []), ...(pendingLegacy ?? [])].forEach(r => pendingMap.set(r.id, r))
+  const pending = Array.from(pendingMap.values())
+
+  const isCourse = offering.offering_type === 'course'
   const leaders   = enrollments?.filter(e => e.people?.dance_role === 'leader').length ?? 0
   const followers = enrollments?.filter(e => e.people?.dance_role === 'follower').length ?? 0
+
+  const subtitle = isCourse
+    ? [offering.day_of_week, offering.start_time ? fmtTime(offering.start_time) : null, offering.location].filter(Boolean).join(' · ')
+    : [offering.start_date ? format(parseISO(offering.start_date), 'EEE d MMM yyyy') : null, offering.start_time ? fmtTime(offering.start_time) : null, offering.location].filter(Boolean).join(' · ')
 
   return (
     <div>
       <div className="mb-6">
-        <Link href="/crm/courses" className="flex items-center gap-1 text-sm text-[#9A907F] hover:text-[#C9A84C]">
-          <ArrowLeft size={14} weight="light" /> Courses
+        <Link href="/crm/offerings" className="flex items-center gap-1 text-sm text-[#9A907F] hover:text-[#C9A84C]">
+          <ArrowLeft size={14} weight="light" /> Offerings
         </Link>
       </div>
 
       <PageHeader
-        title={course.name}
-        subtitle={[course.day_of_week, course.start_time ? fmtTime(course.start_time) : null, course.location].filter(Boolean).join(' · ')}
+        title={offering.name}
+        subtitle={subtitle}
         action={
           <div className="flex gap-2">
-            {course.slug && (
-              <a href={`/events/${course.slug}`} target="_blank" rel="noopener noreferrer">
+            {offering.slug && (
+              <a href={`/events/${offering.slug}`} target="_blank" rel="noopener noreferrer">
                 <Button variant="secondary" size="sm"><ArrowSquareOut size={14} weight="light" /> Preview</Button>
               </a>
             )}
-            <Link href={`/crm/courses/${id}/edit`}>
+            <Link href={`/crm/offerings/${id}/edit`}>
               <Button variant="secondary" size="sm"><PencilSimple size={14} weight="light" /> Edit</Button>
             </Link>
-            <DeleteButton table="courses" id={id} redirectTo="/crm/courses" label="Delete" />
+            <DeleteButton table="offerings" id={id} redirectTo="/crm/offerings" label="Delete" />
           </div>
         }
       />
@@ -71,7 +87,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
           { label: 'Enrolled',  value: enrollments?.length ?? 0 },
-          { label: 'Capacity',  value: course.capacity ?? '—' },
+          { label: 'Capacity',  value: offering.capacity ?? '—' },
           { label: 'Leaders',   value: leaders },
           { label: 'Followers', value: followers },
         ].map(s => (
@@ -82,8 +98,29 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
         ))}
       </div>
 
+      {/* Pricing */}
+      <Card className="mb-6">
+        <h3 className="mb-3 font-display text-lg font-light text-[#171410]">Pricing</h3>
+        <div className="flex flex-wrap gap-6 text-sm">
+          <div>
+            <p className="text-xs uppercase tracking-[0.15em] text-[#9A907F]">
+              {isCourse ? 'Drop-in price' : 'Price'}
+            </p>
+            <p className="mt-1 text-[#171410]">
+              {offering.default_price > 0 ? `${offering.default_price.toLocaleString()} HUF` : 'Free'}
+            </p>
+          </div>
+          {isCourse && offering.monthly_pass_price > 0 && (
+            <div>
+              <p className="text-xs uppercase tracking-[0.15em] text-[#9A907F]">Monthly pass</p>
+              <p className="mt-1 text-[#171410]">{offering.monthly_pass_price.toLocaleString()} HUF</p>
+            </div>
+          )}
+        </div>
+      </Card>
+
       {/* Pending registrations */}
-      {pending && pending.length > 0 && (
+      {pending.length > 0 && (
         <Card className="mb-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-lg font-light text-[#171410]">
@@ -123,7 +160,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
       <Card className="mb-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-lg font-light text-[#171410]">Enrolled dancers</h3>
-          <Link href={`/crm/courses/${id}/enroll`}>
+          <Link href={`/crm/offerings/${id}/enroll`}>
             <Button variant="secondary" size="sm"><Plus size={14} weight="light" /> Enroll dancer</Button>
           </Link>
         </div>
@@ -141,7 +178,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
                     </Link>
                   </Td>
                   <Td><Badge variant="gray">{e.people?.dance_role}</Badge></Td>
-                  <Td><span className="text-xs">{e.package_type}</span></Td>
+                  <Td><span className="text-xs">{e.packages?.name ?? 'drop-in'}</span></Td>
                   <Td><Badge variant={statusBadge(e.payment_status)}>{e.payment_status}</Badge></Td>
                   <Td><Badge variant={statusBadge(e.enrollment_status)}>{e.enrollment_status}</Badge></Td>
                 </tr>
@@ -157,7 +194,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
       <Card>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-lg font-light text-[#171410]">Class sessions</h3>
-          <CourseSessionActions courseId={id} />
+          {isCourse && <SessionActions offeringId={id} />}
         </div>
         {sessions?.length ? (
           <Table>

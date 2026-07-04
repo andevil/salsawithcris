@@ -9,7 +9,7 @@ export async function POST(request: Request) {
 
   // Create the package
   const { data: pkg, error } = await supabase
-    .from('student_packages')
+    .from('packages')
     .insert(packageData)
     .select()
     .single()

@@ -17,8 +17,8 @@ export default async function AttendancePage({
 
   // Upcoming and today's sessions
   const { data: sessions } = await supabase
-    .from('class_sessions')
-    .select('*, courses(name, day_of_week)')
+    .from('sessions')
+    .select('*, offerings(name, day_of_week)')
     .eq('status', 'scheduled')
     .gte('date', today)
     .order('date')
@@ -35,12 +35,12 @@ export default async function AttendancePage({
   let selectedSession = sessions?.find(s => s.id === selectedId)
 
   if (selectedId) {
-    // Get enrolled dancers for the course
+    // Get enrolled dancers for the offering
     const [{ data: enrolled }, { data: existingAtt }] = await Promise.all([
       supabase
-        .from('course_enrollments')
+        .from('enrollments')
         .select('people(id, full_name, dance_role, dance_experience)')
-        .eq('course_id', selectedSession?.course_id ?? '')
+        .eq('offering_id', selectedSession?.offering_id ?? '')
         .eq('enrollment_status', 'active'),
       supabase
         .from('attendance')
@@ -85,7 +85,7 @@ export default async function AttendancePage({
                           : 'border-[#E2DDD5] text-[#6B6155] hover:border-[#C9A84C]/40'
                       }`}
                     >
-                      <p className="font-medium">{s.courses?.name}</p>
+                      <p className="font-medium">{s.offerings?.name}</p>
                       <p className="mt-0.5 text-xs text-[#9A907F]">
                         {format(parseISO(s.date), 'EEE d MMM')} · {fmtTime(s.start_time)}
                       </p>
@@ -104,7 +104,7 @@ export default async function AttendancePage({
           {selectedId ? (
             <AttendanceSheet
               sessionId={selectedId}
-              sessionName={selectedSession?.courses?.name ?? ''}
+              sessionName={selectedSession?.offerings?.name ?? ''}
               sessionDate={selectedSession?.date ?? ''}
               people={enrolledPeople}
             />

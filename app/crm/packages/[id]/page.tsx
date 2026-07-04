@@ -9,7 +9,7 @@ import { statusBadge } from '@/components/crm/ui'
 import { ArrowLeft } from '@phosphor-icons/react/dist/ssr'
 import { BonusTracker } from '@/components/crm/BonusTracker'
 import { PackageActions } from '@/components/crm/PackageActions'
-import type { StudentPackage, PackageBonus } from '@/lib/supabase/types'
+import type { Package, PackageBonus } from '@/lib/supabase/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,7 +18,7 @@ export default async function PackageDetailPage({ params }: { params: Promise<{ 
   const supabase = await createClient()
 
   const { data: pkg } = await supabase
-    .from('student_packages')
+    .from('packages')
     .select('*, people(id, full_name), promotions(name), package_bonuses(*)')
     .eq('id', id)
     .single()
@@ -115,7 +115,7 @@ export default async function PackageDetailPage({ params }: { params: Promise<{ 
       {!pkg.archived && (
         <Card>
           <h3 className="mb-4 font-display text-lg font-light text-[#171410]">Actions</h3>
-          <PackageActions pkg={pkg as StudentPackage} />
+          <PackageActions pkg={pkg as Package} />
         </Card>
       )}
     </div>

@@ -14,7 +14,7 @@ const schema = z.object({
   currency:        z.string().default('HUF'),
   payment_method:  z.string().optional(),
   payment_type:    z.string().optional(),
-  related_course_id: z.string().optional(),
+  related_offering_id: z.string().optional(),
   payment_date:    z.string(),
   period_start:    z.string().optional(),
   period_end:      z.string().optional(),
@@ -27,10 +27,10 @@ type FormValues = z.infer<typeof schema>
 
 export function PaymentForm({
   people,
-  courses,
+  offerings,
 }: {
   people: { id: string; full_name: string }[]
-  courses: { id: string; name: string }[]
+  offerings: { id: string; name: string }[]
 }) {
   const router = useRouter()
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
@@ -48,7 +48,7 @@ export function PaymentForm({
     const supabase = createClient()
     const clean = {
       ...values,
-      related_course_id: values.related_course_id || null,
+      related_offering_id: values.related_offering_id || null,
       period_start: values.period_start || null,
       period_end: values.period_end || null,
       reference_note: values.reference_note || null,
@@ -98,10 +98,10 @@ export function PaymentForm({
 
           {['monthly-pass','two-month-pass','three-month-pass','single-class'].includes(paymentType ?? '') && (
             <>
-              <Field label="Course" htmlFor="related_course_id">
-                <Select id="related_course_id" {...register('related_course_id')}>
+              <Field label="Offering" htmlFor="related_offering_id">
+                <Select id="related_offering_id" {...register('related_offering_id')}>
                   <option value="">—</option>
-                  {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {offerings.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
                 </Select>
               </Field>
               <Field label="Period start" htmlFor="period_start">

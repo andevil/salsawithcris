@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader, Badge, Table, Th, Td, Button, EmptyState } from '@/components/crm/ui'
 import { statusBadge } from '@/components/crm/ui'
-import { UserPlus } from '@phosphor-icons/react/dist/ssr'
+import { UserPlus, ListChecks } from '@phosphor-icons/react/dist/ssr'
 import { PeopleSearch } from '@/components/crm/PeopleSearch'
 
 export const dynamic = 'force-dynamic'
@@ -52,6 +52,17 @@ export default async function PeoplePage({
         defaultStatus={status}
         defaultRole={role}
       />
+
+      {status === 'waitlist' && (
+        <div className="mt-3 flex justify-end">
+          <Link
+            href="/crm/waitlist"
+            className="flex items-center gap-1.5 text-xs text-[#C9A84C] hover:underline"
+          >
+            <ListChecks size={14} weight="light" /> Waitlist tools
+          </Link>
+        </div>
+      )}
 
       <div className="mt-4 border border-[#E2DDD5] bg-white">
         {people?.length ? (

@@ -59,33 +59,46 @@ lib/
 ```
 app/crm/
   login/          — Supabase email/password auth
-  page.tsx        — Dashboard (stats, upcoming classes, unpaid, expiring passes, tasks)
-  people/         — List + detail + new + edit + log communication
-  courses/        — List + detail + new + edit + enroll dancer + generate sessions
-  attendance/     — Mobile-first check-in sheet
-  payments/       — List + add payment + unpaid alerts
-  passes/         — Active passes with credit bars + expiry urgency
-  waitlist/       — Status filter table + add + update status
-  private-lessons/— List + schedule
-  workshops/      — List + detail + create
+  page.tsx        — Dashboard (stats, upcoming sessions, unpaid, expiring packages, tasks)
+  people/         — List + detail + new + edit + log communication (+ waitlist as status filter)
+  offerings/      — UNIFIED courses + workshops (tabs via ?type=course|workshop); detail + new + edit + enroll + sessions
+  attendance/     — Mobile-first check-in sheet (table: sessions)
+  payments/       — List + add payment + unpaid alerts (related_offering_id)
+  packages/       — Single package system (table: packages, ex student_packages)
+  promotions/     — Promotion CRUD, feeds packages
+  notifications/  — Package notifications
+  registrations/  — Public sign-up inbox → converts into People + Enrollments
+  waitlist/       — Kept as tools page, reached from People filter (NOT in sidebar)
+  private-lessons/— List + schedule (package_id instead of pass_id)
   settings/       — Business info, pricing, locations
 
 components/crm/
   ui.tsx          — Badge, Card, Button, Table, Field, Input, Select, StatCard etc.
-  CRMSidebar.tsx  — Fixed sidebar with nav
+  CRMSidebar.tsx  — Nav: Dashboard, People, Offerings, Attendance, Payments, Packages,
+                    Promotions, Notifications, Registrations, Private Lessons, Settings
   CRMTopbar.tsx   — Mobile toggle + sign out
   AttendanceSheet.tsx — Client check-in component
-  PersonForm.tsx, CourseForm.tsx, PaymentForm.tsx, PassForm.tsx,
+  PersonForm.tsx, OfferingForm.tsx (ex Course+WorkshopForm), PaymentForm.tsx,
   WaitlistForm.tsx, WaitlistEditForm.tsx, PrivateLessonForm.tsx,
-  WorkshopForm.tsx, EnrollForm.tsx, CourseSessionActions.tsx
+  EnrollForm.tsx (package_id select), SessionActions.tsx (ex CourseSessionActions)
 
 lib/supabase/
-  client.ts, server.ts, middleware.ts, types.ts
+  client.ts, server.ts, middleware.ts, types.ts (hand-written; Offering/Session/Enrollment/Package)
 
 supabase/migrations/
-  001_crm_schema.sql  — 13 tables + RLS + indexes + triggers
-  002_seed.sql        — 7 courses, 15 dancers, passes, waitlist, sessions, tasks
+  001_crm_schema.sql          — original 13 tables (historical)
+  002_seed.sql                — original seed; STILL NEEDED on fresh DB (people rows used by 006)
+  003_packages_promotions.sql — packages/promotions module
+  004_public_registrations.sql— public inbox
+  005_schema_consolidation.sql— offerings/sessions/enrollments; drops courses, workshops,
+                                class_sessions, course_enrollments, workshop_registrations, passes;
+                                renames student_packages→packages; real FKs on payments/tasks/public_registrations
+  006_seed_v2.sql             — seed for new schema incl. multi-session workshop
+                                "Salsa Caleña Sessions | July" (4 sessions) — apply via SQL, data-only
+  007_fk_indexes.sql          — FK covering indexes from performance advisor
 ```
+
+**DB schema key facts (post-005):** `offerings.offering_type` 'course'|'workshop', `recurrence` 'weekly'|'one-off'|'multi-session', keeps `slug`/`thumbnail_url` (public event pages read offerings+sessions with anon key — policies `public_read_offerings`/`public_read_sessions`), `workshop_type` keeps old workshops.type values. New tables need explicit GRANTs (Supabase apr-2026 change: no auto Data-API exposure).
 
 **Stack additions for CRM:** `@supabase/supabase-js`, `@supabase/ssr`, `react-hook-form`, `zod@3`, `@hookform/resolvers@3`, `date-fns`
 
@@ -106,6 +119,7 @@ supabase/migrations/
 | 7 | All 9 section components written | ✅ |
 | 8 | `npm run lint` + `npm run build` — 0 errors, 0 warnings | ✅ |
 | 9 | Pushed to public GitHub repo | ✅ |
+| 10 | Schema consolidation (2026-07-04): offerings/sessions/enrollments/packages; migration 005+006+007 applied to Supabase (phcxyitwmeqblveeemyg); CRM refactored to single Offerings module; build clean | ✅ |
 
 ---
 
