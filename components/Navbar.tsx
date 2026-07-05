@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { List, X } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { navLinks } from "@/lib/data";
+import { navLinks, hero } from "@/lib/data";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -27,33 +27,39 @@ export function Navbar() {
   }, [open]);
 
   return (
-    <header
-      className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-all duration-500",
-        scrolled
-          ? "border-b border-divider bg-warm-white/80 backdrop-blur-md"
-          : "border-b border-transparent bg-transparent",
-      )}
-    >
-      <nav className="mx-auto flex h-20 max-w-[1400px] items-center justify-between px-6 md:px-10">
+    <header className="fixed inset-x-0 top-4 z-50">
+      <div
+        className={cn(
+          "mx-auto flex h-16 w-[min(1120px,calc(100%-32px))] items-center justify-between rounded-pill px-4 pl-6 transition-all duration-500 md:pl-7",
+          scrolled
+            ? "border border-gold/25 bg-cream/72 shadow-[0_18px_60px_rgba(27,18,13,0.12)] backdrop-blur-[18px]"
+            : "border border-cream/25 bg-espresso/15 backdrop-blur-[8px]",
+        )}
+      >
         {/* Logo */}
         <a
           href="#home"
-          className="font-display text-3xl font-light tracking-wide text-gold"
+          className={cn(
+            "font-display text-2xl font-medium leading-none tracking-wide transition-colors duration-500",
+            scrolled ? "text-espresso" : "text-cream",
+          )}
           aria-label="Salsita with Cris — home"
         >
-          CG
+          <span className={scrolled ? "text-salsa-red" : "text-gold-soft"}>C</span>
+          G
         </a>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-10 md:flex">
+        <div className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
               className={cn(
-                "text-sm tracking-wide transition-colors duration-300 hover:text-gold",
-                scrolled ? "text-ink" : "text-white",
+                "text-sm tracking-wide transition-colors duration-300",
+                scrolled
+                  ? "text-espresso-soft hover:text-salsa-red"
+                  : "text-cream/90 hover:text-gold-soft",
               )}
             >
               {link.label}
@@ -61,7 +67,7 @@ export function Navbar() {
           ))}
           <a
             href="#booking"
-            className="bg-gold px-6 py-3 text-sm font-medium tracking-wide text-ink transition-transform duration-300 hover:-translate-y-0.5"
+            className="primary-cta rounded-pill px-6 py-2.5 text-sm font-medium tracking-wide"
           >
             Book a Class
           </a>
@@ -73,33 +79,33 @@ export function Navbar() {
           onClick={() => setOpen(true)}
           aria-label="Open menu"
           className={cn(
-            "md:hidden",
-            scrolled ? "text-ink" : "text-white",
+            "flex h-10 w-10 items-center justify-center rounded-pill transition-colors md:hidden",
+            scrolled ? "text-espresso" : "text-cream",
           )}
         >
-          <List size={28} weight="light" />
+          <List size={26} weight="light" />
         </button>
-      </nav>
+      </div>
 
       {/* Mobile fullscreen overlay */}
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={reduce ? { opacity: 0 } : { opacity: 0 }}
+            initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduce ? 0.15 : 0.4, ease: "easeInOut" }}
-            className="fixed inset-0 z-50 flex flex-col bg-white md:hidden"
+            className="fixed inset-0 z-50 flex flex-col bg-cream md:hidden"
           >
             <div className="flex h-20 items-center justify-between px-6">
-              <span className="font-display text-3xl font-light text-gold">
-                CG
+              <span className="font-display text-3xl font-medium text-espresso">
+                <span className="text-salsa-red">C</span>G
               </span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close menu"
-                className="text-ink"
+                className="text-espresso"
               >
                 <X size={28} weight="light" />
               </button>
@@ -118,7 +124,7 @@ export function Navbar() {
                     duration: 0.4,
                     ease: "easeOut",
                   }}
-                  className="font-display text-5xl font-light text-ink transition-colors hover:text-gold"
+                  className="font-display text-5xl font-light text-espresso transition-colors hover:text-salsa-red"
                 >
                   {link.label}
                 </motion.a>
@@ -127,11 +133,11 @@ export function Navbar() {
 
             <div className="px-8 pb-12">
               <a
-                href="#booking"
+                href={hero.ctaPrimary.href}
                 onClick={() => setOpen(false)}
-                className="block bg-gold px-6 py-4 text-center text-sm font-medium tracking-wide text-ink"
+                className="primary-cta block rounded-pill px-6 py-4 text-center text-sm font-medium tracking-wide"
               >
-                Book a Class
+                {hero.ctaPrimary.label}
               </a>
             </div>
           </motion.div>

@@ -2,29 +2,46 @@
 
 /* ===========================================================================
    Design tokens — Salsita with Cris
-   Editorial luxury: warm cream paper, black ink, single gold accent.
+   Premium Colombian salsa: warm cream base, salsa red + gold accents,
+   tropical green / Colombian blue / coral as secondary flavor.
    =========================================================================== */
 @theme {
   --font-display: var(--font-cormorant);
   --font-sans: var(--font-dm-sans);
 
-  --color-gold: #c9a84c;
-  --color-ink: #171410;
-  --color-ink-mid: #6b6155;
-  --color-ink-soft: #9a907f;
-  --color-divider: #e2ddd5;
-  --color-warm-white: #f7f5f1;
-  --color-cream: #fafaf8;
+  /* Brand palette */
+  --color-cream: #FFF6E8;
+  --color-cream-soft: #FFF9F0;
+  --color-salsa-red: #B91C1C;
+  --color-deep-red: #7F1515;
+  --color-gold: #D4A017;
+  --color-gold-soft: #F3D27A;
+  --color-espresso: #1B120D;
+  --color-espresso-soft: #3A261C;
+  --color-tropical-green: #1F8A5B;
+  --color-colombian-blue: #2454A6;
+  --color-coral: #F9735B;
+  --color-muted: #7C6A5A;
+
+  /* Legacy aliases — remapped to the warm palette so untouched pages
+     (e.g. app/events/[slug]) inherit the new look automatically. */
+  --color-ink: #1B120D;
+  --color-ink-mid: #5C4A3C;
+  --color-ink-soft: #7C6A5A;
+  --color-divider: #EAD9BF;
+  --color-warm-white: #FFF9F0;
+
+  /* Radius tokens */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
 }
 
 /* ---------------------------------------------------------------------------
    Global rules
    --------------------------------------------------------------------------- */
-
-/* Portfolio enforces sharp corners — scoped so CRM can use rounded freely */
-.portfolio-root * {
-  border-radius: 0 !important;
-}
 
 html {
   scroll-behavior: smooth;
@@ -98,3 +115,95 @@ body {
   80%       { transform: translateX(4px); }
 }
 .shake { animation: shake 0.35s ease-in-out; }
+
+/* ---------------------------------------------------------------------------
+   Page background — warm cream base with soft radial color washes
+   --------------------------------------------------------------------------- */
+.page-bg {
+  background:
+    radial-gradient(circle at 20% 10%, rgba(249, 115, 91, 0.25), transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(212, 160, 23, 0.22), transparent 28%),
+    radial-gradient(circle at 50% 90%, rgba(31, 138, 91, 0.12), transparent 35%),
+    #FFF6E8;
+}
+
+/* ---------------------------------------------------------------------------
+   Glassmorphism — base glass card
+   --------------------------------------------------------------------------- */
+.glass-card {
+  background: rgba(255, 246, 232, 0.68);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(212, 160, 23, 0.22);
+  box-shadow: 0 24px 80px rgba(80, 32, 12, 0.12);
+  border-radius: var(--radius-lg);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-card {
+    background: rgba(255, 246, 232, 0.94);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Premium card — gradient-border glass card (padding-box / border-box trick)
+   --------------------------------------------------------------------------- */
+.premium-card {
+  background:
+    linear-gradient(rgba(255, 249, 240, 0.82), rgba(255, 246, 232, 0.68)) padding-box,
+    linear-gradient(135deg, rgba(212, 160, 23, 0.65), rgba(185, 28, 28, 0.55), rgba(31, 138, 91, 0.35)) border-box;
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 70px rgba(27, 18, 13, 0.12);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .premium-card {
+    background:
+      linear-gradient(rgba(255, 249, 240, 0.96), rgba(255, 246, 232, 0.92)) padding-box,
+      linear-gradient(135deg, rgba(212, 160, 23, 0.65), rgba(185, 28, 28, 0.55), rgba(31, 138, 91, 0.35)) border-box;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Primary CTA — gradient button with soft glow
+   --------------------------------------------------------------------------- */
+.primary-cta {
+  background: linear-gradient(135deg, #B91C1C, #D4A017);
+  color: #FFF9F0;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 16px 40px rgba(185, 28, 28, 0.28);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.primary-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 55px rgba(185, 28, 28, 0.34);
+  filter: saturate(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary-cta:hover {
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Float drift — gentle vertical drift for floating badges/decorations
+   --------------------------------------------------------------------------- */
+@keyframes float-drift {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+.animate-float-drift {
+  animation: float-drift 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-drift {
+    animation: none;
+  }
+}

@@ -12,14 +12,17 @@
 
 ---
 
-## Design Rules (non-negotiable)
+## Design Rules (non-negotiable — v2, "glow-up" 2026-07-05)
 
-- **No border radius anywhere** — enforced globally via `* { border-radius: 0 !important; }` in `globals.css`
+> v1 rules (sharp corners, gold-only) were REPLACED by the UI-audit glow-up, approved by owner.
+
+- **Rounded corners + glassmorphism**: radius tokens `--radius-sm/md/lg/xl/pill` (10/16/24/32/999px). Cards `rounded-lg`, buttons/badges pill. Utilities in `globals.css`: `.glass-card`, `.premium-card`, `.primary-cta`, `.page-bg`, `.animate-float-drift`
+- **Palette (brief)**: cream base `#FFF6E8` (+`cream-soft #FFF9F0`), espresso text `#1B120D`, **salsa-red `#B91C1C` = primary CTA**, gold `#D4A017` = highlights/available states, tropical-green/colombian-blue/coral ONLY as tiny accents. Legacy tokens (`ink`, `divider`, `warm-white`) remapped to warm values — CRM/events pages inherit them
 - **Fonts:** Cormorant Garamond (headings/display) · DM Sans (body/UI) — loaded via `next/font/google`
-- **Gold `#C9A84C`** is the only accent color
-- **Hero video** Mux playback ID: `LgNB00c7gLG4emTMep78OyYXPwcqcfcwqeth02oj8G5X8`
-- All animations via `motion/react`; always respect `useReducedMotion()`
-- Copy tone: warm, Colombian, soulful, social-dance-focused — NOT corporate, NOT Bachata-first
+- **Hero video** Mux playback ID: `LgNB00c7gLG4emTMep78OyYXPwcqcfcwqeth02oj8G5X8` (warm red/espresso scrim, fades to cream)
+- All animations via `motion/react`; always respect `useReducedMotion()`; shared ease `[0.22, 1, 0.36, 1]`
+- Copy tone: warm, Colombian, soulful, social-dance-focused — NOT corporate, NOT Bachata-first. Spanish microcopy welcome ("con sabor")
+- ALL landing copy lives in `lib/data.ts` (incl. `hero`, `sectionCopy`, `choosePath`, `weeklySchedule`, `faqItems`, `galleryItems`, `reels`, `philosophyCards`)
 
 ---
 
@@ -31,16 +34,23 @@ app/
   page.tsx            — assembles all 9 sections
   globals.css         — @theme tokens, global rules, marquee keyframes
 
-components/
-  Navbar.tsx          — fixed, scroll-aware, mobile fullscreen overlay
-  Hero.tsx            — Mux video bg, staggered editorial text
-  StyleStrip.tsx      — continuous marquee with gold dot separators
-  About.tsx           — two-column, portrait fallback, NumberTicker stats
-  Services.tsx        — numbered editorial list rows
-  Testimonials.tsx    — pull quote + 2-col supporting grid
-  BookingCalendar.tsx — 3-step animated booking (calendar → form → success)
-  Contact.tsx         — MagicUI Dock + social handle list
-  Footer.tsx          — minimal single-row, dynamic year
+components/           (landing order: Navbar → Hero → StyleStrip → About → ChoosePath →
+                       Services → WeeklySchedule → BookingCalendar → Testimonials →
+                       CommunityGallery → VideoReels → FAQAccordion → Contact → Footer)
+  Navbar.tsx          — fixed floating glass PILL (top-4), dark tint over hero → cream glass on scroll, mobile fullscreen overlay
+  Hero.tsx            — Mux video bg, warm scrim, pill badge, floating reassurance badges, 2 CTAs
+  StyleStrip.tsx      — marquee, serif/sans alternating, MusicNote separators (server component, SSR icon import)
+  About.tsx           — editorial 2-col, rounded portrait + fallback, philosophy chips, NumberTicker stats (300+/174/8+/3)
+  ChoosePath.tsx      — 4 "Not sure where to begin?" glass cards, accent per card
+  Services.tsx        — 5 premium-cards (2+2+1), ghost number, icon, benefit, price, CTA
+  WeeklySchedule.tsx  — 5 schedule cards, snap-scroll mobile (data: weeklySchedule)
+  BookingCalendar.tsx — 3-step booking (calendar → form → success); glass reskin, LOGIC UNTOUCHED; gold=available, red=selected
+  Testimonials.tsx    — featured glass quote + grid, initials avatars w/ accent, classBadge pills
+  CommunityGallery.tsx— 6-tile editorial grid, warm gradient placeholders until real photos land
+  VideoReels.tsx      — 3 vertical 9:16 reel cards, decorative (non-interactive) play overlay
+  FAQAccordion.tsx    — 9 items, accessible (aria-expanded/controls, role=region)
+  Contact.tsx         — "Let's dance together.", Dock in glass pill, 3 CTAs
+  Footer.tsx          — deep espresso bg, cream text, gold hover, dynamic year
   magicui/
     Marquee.tsx
     BlurFade.tsx
@@ -121,6 +131,7 @@ supabase/migrations/
 | 9 | Pushed to public GitHub repo | ✅ |
 | 10 | Schema consolidation (2026-07-04): offerings/sessions/enrollments/packages; migration 005+006+007 applied to Supabase (phcxyitwmeqblveeemyg); CRM refactored to single Offerings module; build clean | ✅ |
 | 11 | Audit & hardening (2026-07-04, commit f006ca9): 008 sessions unique constraint; attendance includes trial/registered; AddSessionForm for workshops; requireUser() on /api/crm/*; error/loading/404 pages; robots+sitemap+OG; next/image; ESLint CLI flat config; .env.example | ✅ |
+| 12 | **UI glow-up (2026-07-05/06)**: full landing redesign per UI-audit brief (`salsa_with_cris_ui_glowup_summary.md`) — rounded+glass design system, brief palette, 5 new sections (ChoosePath, WeeklySchedule, CommunityGallery, VideoReels, FAQAccordion), all copy in data.ts, booking logic untouched. Orchestrated: 1 foundation agent (Sonnet) → 5 parallel section agents (Opus/Sonnet×3/Haiku) → integration+QA. lint+build clean; QA via DOM (hidden preview tab freezes rAF → animations/screenshots not testable there, verified structurally). NOT committed yet | ✅ |
 
 **Pending (needs owner):** real YouTube channel URL + testimonials + booking availability in `lib/data.ts` (placeholders kept intentionally); npm audit shows 2 moderate (Next's bundled postcss — wait for Next patch); majors deferred on purpose (Next 16, zod 4, TS 6 — zod v3 + resolvers v3 required by react-hook-form typing).
 
@@ -135,6 +146,9 @@ supabase/migrations/
 3. **Instagram / TikTok handles** → verify in `lib/data.ts`
 4. **Email** → `andresgarzong@gmail.com` (confirm this is correct)
 5. **Booking availability** → replace `availability` in `lib/data.ts` with real backend
+6. **Gallery photos** → drop 6 real community photos at `/public/images/gallery/*.jpg` (paths in `galleryItems`, warm gradient placeholders shown meanwhile; missing files = expected 400s from next/image in dev)
+7. **Reel thumbnails** → `/public/images/reels/*.jpg` (paths in `reels`); wire real video embeds later
+8. **Schedule gaps** → Wednesday location, Thursday & Saturday times are empty strings in `weeklySchedule` (brief didn't specify) — fill when confirmed
 
 ---
 
