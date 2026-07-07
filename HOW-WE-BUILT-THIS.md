@@ -2,6 +2,8 @@
 
 > A step-by-step guide to reverse-engineering this project so you can build the next one yourself (with or without an AI co-pilot).
 
+> **Naming note (Jul 2026):** this project started life as `andresgarzong.com` (folder, repo, and domain in the examples below). It was later renamed: the repo is now `andevil/salsawithcris`, the folder is `~/Claude/Projects/Salsa/salsawithcris.com`, and the site is live at **salsawithcris.com** (CRM at `/crm`). The historical commands below keep the old name on purpose.
+
 ---
 
 ## Table of Contents

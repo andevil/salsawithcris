@@ -1,5 +1,7 @@
 # Salsita with Cris - website + student CRM
 
+Live at **salsawithcris.com**; the CRM is at **salsawithcris.com/crm**.
+
 Before doing anything, read `MEMORY.md` (source of truth for current state, design rules, and decisions) and `HOW-WE-BUILT-THIS.md` (architecture walkthrough). Update `MEMORY.md` at every milestone, as it instructs.
 
 Owner: Cris (Andrés), single operator of the salsa school. He is learning the flow: explain decisions briefly, use plan mode for non-trivial work, and keep scope small. Goal: production-ready before the autumn salsa season. Simplest thing that ships wins.

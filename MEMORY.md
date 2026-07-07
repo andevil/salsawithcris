@@ -6,7 +6,7 @@
 
 ## Project
 
-**Site:** andresgarzong.com  
+**Site:** salsawithcris.com (live; CRM at salsawithcris.com/crm)  
 **Repo:** https://github.com/andevil/salsawithcris  
 **Stack:** Next.js 15.5.19 · React 19 · TypeScript · Tailwind CSS v4 · `motion/react` · `@mux/mux-video-react` · `@phosphor-icons/react` · MagicUI (hand-built)
 
