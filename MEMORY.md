@@ -144,7 +144,7 @@ supabase/migrations/
 1. **Portrait** → add real photo at `/public/images/cristhian-portrait.jpg`
 2. **YouTube URL** → update `href` in `lib/data.ts` `socialLinks`
 3. **Instagram / TikTok handles** → verify in `lib/data.ts`
-4. **Email** → `andresgarzong@gmail.com` (confirm this is correct)
+4. **Email** → `andresgarzong@gmail.com` ✅ confirmed (brand address, delegated to his primary andresitogar@gmail.com, so mail lands there too)
 5. **Booking availability** → replace `availability` in `lib/data.ts` with real backend
 6. **Gallery photos** → drop 6 real community photos at `/public/images/gallery/*.jpg` (paths in `galleryItems`, warm gradient placeholders shown meanwhile; missing files = expected 400s from next/image in dev)
 7. **Reel thumbnails** → `/public/images/reels/*.jpg` (paths in `reels`); wire real video embeds later
